@@ -261,7 +261,6 @@ C   ANY DAMAGES THAT MAY RESULT FROM THE USE OF THE PROGRAM.
      *        AN(NPN1),R(NPNG2),DR(NPNG2),
      *        DDR(NPNG2),DRR(NPNG2),DRI(NPNG2),ANN(NPN1,NPN1)
       REAL*8 TR1(NPN2,NPN2),TI1(NPN2,NPN2)
-      REAL*8 XALPHA(300),XBETA(300),WALPHA(300),WBETA(300)
       REAL*8 QEXT,QSCA
       REAL*4
      &     RT11(NPN6,NPN4,NPN4),RT12(NPN6,NPN4,NPN4),
@@ -350,10 +349,10 @@ C     PRINT 8000, RAT
 !  7340    FORMAT('NGAUSS =',I3,' I.E. IS GREATER THAN NPNG1.',
 !      &          '  EXECUTION TERMINATED')
 !  7334    FORMAT(' NMAX =', I3,'  DC2=',D8.2,'   DC1=',D8.2)
-         CALL CONST(NGAUSS,NMAX,MMAX,P,X,W,AN,ANN,S,SS,NP,EPS)
+         CALL CONST(NGAUSS,NMAX,X,W,AN,ANN,S,SS,NP,EPS)
          CALL VARY(LAM,MRR,MRI,A,EPS,NP,NGAUSS,X,P,PPI,PIR,PII,R,
      &              DR,DDR,DRR,DRI,NMAX)
-         CALL TMATR0 (NGAUSS,X,W,AN,ANN,S,SS,PPI,PIR,PII,R,DR,
+         CALL TMATR0 (NGAUSS,X,W,AN,ANN,PPI,PIR,PII,R,DR,
      &                 DDR,DRR,DRI,NMAX,NCHECK)
          QEXT=0D0
          QSCA=0D0
@@ -386,10 +385,10 @@ c        PRINT 7334, NMAX,DSCA,DEXT
          NGGG=2*NGAUSS
 !  7336    FORMAT('WARNING: NGAUSS=NPNG1')
 !  7337    FORMAT(' NG=',I3,'  DC2=',D8.2,'   DC1=',D8.2)
-         CALL CONST(NGAUSS,NMAX,MMAX,P,X,W,AN,ANN,S,SS,NP,EPS)
+         CALL CONST(NGAUSS,NMAX,X,W,AN,ANN,S,SS,NP,EPS)
          CALL VARY(LAM,MRR,MRI,A,EPS,NP,NGAUSS,X,P,PPI,PIR,PII,R,
      &              DR,DDR,DRR,DRI,NMAX)
-         CALL TMATR0 (NGAUSS,X,W,AN,ANN,S,SS,PPI,PIR,PII,R,DR,
+         CALL TMATR0 (NGAUSS,X,W,AN,ANN,PPI,PIR,PII,R,DR,
      &                 DDR,DRR,DRI,NMAX,NCHECK)
          QEXT=0D0
          QSCA=0D0
@@ -917,7 +916,7 @@ C     0.LE.X.LE.1
 
 C**********************************************************************
 
-      SUBROUTINE CONST (NGAUSS,NMAX,MMAX,P,X,W,AN,ANN,S,SS,NP,EPS)
+      SUBROUTINE CONST (NGAUSS,NMAX,X,W,AN,ANN,S,SS,NP,EPS)
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'ampld.par.f'
       REAL*8 X(NPNG2),W(NPNG2),X1(NPNG1),W1(NPNG1),
@@ -984,7 +983,7 @@ C**********************************************************************
       COMMON /CBESS/ J,Y,JR,JI,DJ,DY,DJR,DJI
       NG=NGAUSS*2
       IF (NP.GT.0) CALL RSP2(X,NG,A,EPS,NP,R,DR)
-      IF (NP.EQ.-1) CALL RSP1(X,NG,NGAUSS,A,EPS,NP,R,DR)
+      IF (NP.EQ.-1) CALL RSP1(X,NG,NGAUSS,A,EPS,R,DR)
       IF (NP.EQ.-2) CALL RSP3(X,NG,NGAUSS,A,EPS,R,DR)
       IF (NP.EQ.-3) CALL RSP4(X,NG,A,R,DR)
       PI=P*2D0/LAM
@@ -1023,7 +1022,7 @@ C**********************************************************************
 
 C**********************************************************************
 
-      SUBROUTINE RSP1 (X,NG,NGAUSS,REV,EPS,NP,R,DR)
+      SUBROUTINE RSP1 (X,NG,NGAUSS,REV,EPS,R,DR)
       IMPLICIT REAL*8 (A-H,O-Z)
       REAL*8 X(NG),R(NG),DR(NG)
       A=REV*EPS**(1D0/3D0)
@@ -1293,19 +1292,17 @@ C**********************************************************************
 
 C**********************************************************************
 
-      SUBROUTINE TMATR0 (NGAUSS,X,W,AN,ANN,S,SS,PPI,PIR,PII,R,DR,DDR,
+      SUBROUTINE TMATR0 (NGAUSS,X,W,AN,ANN,PPI,PIR,PII,R,DR,DDR,
      *                  DRR,DRI,NMAX,NCHECK)
       INCLUDE 'ampld.par.f'
       IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8  X(NPNG2),W(NPNG2),AN(NPN1),S(NPNG2),SS(NPNG2),
-     *        R(NPNG2),DR(NPNG2),SIG(NPN2),
+      REAL*8  X(NPNG2),W(NPNG2),AN(NPN1),R(NPNG2),DR(NPNG2),SIG(NPN2),
      *        J(NPNG2,NPN1),Y(NPNG2,NPN1),
      *        JR(NPNG2,NPN1),JI(NPNG2,NPN1),DJ(NPNG2,NPN1),
      *        DY(NPNG2,NPN1),DJR(NPNG2,NPN1),
      *        DJI(NPNG2,NPN1),DDR(NPNG2),DRR(NPNG2),
      *        D1(NPNG2,NPN1),D2(NPNG2,NPN1),
-     *        DRI(NPNG2),DS(NPNG2),DSS(NPNG2),RR(NPNG2),
-     *        DV1(NPN1),DV2(NPN1)
+     *        DRI(NPNG2),RR(NPNG2),DV1(NPN1),DV2(NPN1)
 
       REAL*8  R11(NPN1,NPN1),R12(NPN1,NPN1),
      *        R21(NPN1,NPN1),R22(NPN1,NPN1),
@@ -1343,7 +1340,7 @@ C**********************************************************************
            SI=-SI
            SIG(N)=SI
     5 CONTINUE
-   20 DO 25 I=1,NGAUSS
+      DO 25 I=1,NGAUSS
          I1=NGAUSS+I
          I2=NGAUSS-I+1
          CALL VIG ( X(I1), NMAX, 0, DV1, DV2)
@@ -1356,7 +1353,7 @@ C**********************************************************************
             D1(I2,N)=DD1*SI
             D2(I2,N)=-DD2*SI
    25 CONTINUE
-   30 DO 40 I=1,NGSS
+      DO 40 I=1,NGSS
            RR(I)=W(I)*R(I)
    40 CONTINUE
 
@@ -1500,7 +1497,7 @@ C**********************************************************************
                 RGQR(N1,N2)=TRGQR(N1,N2)
                 RGQI(N1,N2)=TRGQI(N1,N2)
   320 CONTINUE
-      CALL TT(NMAX,NCHECK)
+      CALL TT(NMAX)
       RETURN
       END
 
@@ -1558,7 +1555,7 @@ C**********************************************************************
            SI=-SI
            SIG(N)=SI
     5 CONTINUE
-   20 DO 25 I=1,NGAUSS
+      DO 25 I=1,NGAUSS
          I1=NGAUSS+I
          I2=NGAUSS-I+1
          CALL VIG (X(I1),NMAX,M,DV1,DV2)
@@ -1571,7 +1568,7 @@ C**********************************************************************
             D1(I2,N)=DD1*SI
             D2(I2,N)=-DD2*SI
    25 CONTINUE
-   30 DO 40 I=1,NGSS
+      DO 40 I=1,NGSS
            WR=W(I)*R(I)
            DS(I)=S(I)*QM*WR
            DSS(I)=SS(I)*QMM
@@ -1779,7 +1776,7 @@ C**********************************************************************
                 RGQI(N1,N2)=TRGQI(N1,N2)
   320 CONTINUE
 
-      CALL TT(NM,NCHECK)
+      CALL TT(NM)
 
       RETURN
       END
@@ -1845,16 +1842,14 @@ C   OUTPUT INFORMATION IS IN COMMON /CT/                              *
 C                                                                     *
 C**********************************************************************
 
-      SUBROUTINE TT(NMAX,NCHECK)
+      SUBROUTINE TT(NMAX)
       INCLUDE 'ampld.par.f'
       IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 F(NPN2,NPN2),B(NPN2),WORK(NPN2),
-     *       QR(NPN2,NPN2),QI(NPN2,NPN2),
-     *       RGQR(NPN2,NPN2),RGQI(NPN2,NPN2),
-     *       A(NPN2,NPN2),C(NPN2,NPN2),D(NPN2,NPN2),E(NPN2,NPN2)
+      REAL*8 QR(NPN2,NPN2),QI(NPN2,NPN2),
+     *       RGQR(NPN2,NPN2),RGQI(NPN2,NPN2)
       REAL*8 TR1(NPN2,NPN2),TI1(NPN2,NPN2)
       COMPLEX*16 ZQ(NPN2,NPN2),ZW(NPN2)
-      INTEGER IPIV(NPN2),IPVT(NPN2)
+      INTEGER IPIV(NPN2)
       COMMON /CT/ TR1,TI1
       COMMON /CTT/ QR,QI,RGQR,RGQI
       NDIM=NPN2
