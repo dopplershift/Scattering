@@ -1,0 +1,23 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _tmatrix ! in 
+    interface  ! in :tmatrix
+        subroutine tmatrix(axi,rat,lam,mr,eps,np,ddelt,ndgs,qsca,smat_frwd,smat_bkwd) ! in :tmatrix:ampld.lp.f
+            real*8 intent(in) :: axi
+            real*8 intent(in) :: rat
+            real*8 intent(in) :: lam
+            complex*16 intent(in) :: mr
+            real*8 intent(in) :: eps
+            integer intent(in) :: np
+            real*8 intent(in) :: ddelt=0.001
+            integer intent(in) :: ndgs=2
+            real*8 intent(out) :: qsca
+            complex*16 intent(out) :: smat_frwd(2,2)
+            complex*16 intent(out) :: smat_bkwd(2,2)
+        end subroutine tmatrix
+    end interface 
+end python module tmatrix
+
+! This file was auto-generated with f2py (version:2_3198).
+! See http://cens.ioc.ee/projects/f2py2e/
