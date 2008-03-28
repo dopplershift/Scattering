@@ -214,7 +214,7 @@ def tmatrix(m, d, lam, shape):
     for i,ds in enumerate(d):
         if ds == 0:
             continue
-        qs,fmat,bmat = tmat.tmatrix(ds/2.0,equal_volume,lam,m,eccen[i],np)
+        qs,fmat,bmat = _tmat.tmatrix(ds/2.0,equal_volume,lam,m,eccen[i],np)
         sigma_g = (N.pi / 4.0) * ds ** 2
         qsca[i] = qs * (lam ** 2 / (2 * N.pi)) / sigma_g
         S_frwd[...,i] = fmat
