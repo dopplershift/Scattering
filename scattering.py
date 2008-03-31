@@ -318,11 +318,12 @@ class scatterer(object):
             print 'Invalid scattering model.'
             print 'Valid choices are: %s' % str(scatterer.type_map.keys())
     def get_reflectivity(self, dsd_weights):
-        return si.trapz(self.sigma_b * dsd_weights, x = self.diameters * 10.0)\
-            * 1.0e6 * self.wavelength**4 / (N.pi**5 * 0.93)
+        return si.trapz(self.sigma_b[:,N.newaxis] * dsd_weights,
+            x=self.diameters[:,N.newaxis] * 10.0, axis=0) * (1.0e6
+            * self.wavelength**4) / (N.pi**5 * 0.93)
     def get_attenuation(self, dsd_weights):
-        return (1.0e-1 *
-            si.trapz(self.sigma_e * dsd_weights, x=self.diameters * 10.0))
+        return 1.0e-1 * si.trapz(self.sigma_e[:,N.newaxis] * dsd_weights,
+            x=self.diameters[:,N.newaxis] * 10.0, axis=0)
 
 if __name__ == '__main__':
     import pylab as P
