@@ -2,6 +2,7 @@ import matplotlib.pyplot as P
 import numpy as N
 import scipy.integrate as si
 import scattering, dsd
+from constants import cm_per_m, g_per_kg, mm_per_m, m_per_km
 from matplotlib.font_manager import FontProperties
 
 def plot_csec(scatterer, csec, name):
@@ -22,21 +23,26 @@ def plot_csecs(scatterers):
     P.subplot(2,2,4)
     plot_csec(s, s.sigma_b, '\sigma_{b}')
   
-d = N.linspace(0.01, 2.0, 200).reshape(200,1)
-l = N.linspace(0.01, 25.0, 100).reshape(1,100)
-mp = dsd.mp_from_lwc(d*10.0, l)
-sband = 10.0
-xband = 3.21
+d = N.linspace(0.01, 2.0, 200).reshape(200,1) / cm_per_m
+l = N.linspace(0.01, 25.0, 100).reshape(1,100) / g_per_kg
+mp = dsd.mp_from_lwc(d, l)
+sband = .1 
+xband = .0321
 
-s_tmat = scattering.scatterer(sband, 10.0, 'water', diameters = d)
+T = 10.0
+
+db_factor = 10.0 * N.log10(N.e)
+ref_adjust = 180
+
+s_tmat = scattering.scatterer(sband, T, 'water', diameters=d)
 s_tmat.set_scattering_model('tmatrix')
-s_tmat_ref = 10.0 * N.log10(s_tmat.get_reflectivity(mp))
-s_tmat_atten = s_tmat.get_attenuation(mp) * (10.0 * N.log10(N.e))
+s_tmat_ref = 10.0 * N.log10(s_tmat.get_reflectivity_factor(mp)) + ref_adjust
+s_tmat_atten = s_tmat.get_attenuation(mp) * m_per_km * db_factor
 
-x_tmat = scattering.scatterer(xband, 10.0, 'water', diameters = d)
+x_tmat = scattering.scatterer(xband, T, 'water', diameters=d)
 x_tmat.set_scattering_model('tmatrix')
-x_tmat_ref = 10.0 * N.log10(x_tmat.get_reflectivity(mp))
-x_tmat_atten = x_tmat.get_attenuation(mp) * (10.0 * N.log10(N.e))
+x_tmat_ref = 10.0 * N.log10(x_tmat.get_reflectivity_factor(mp)) + ref_adjust
+x_tmat_atten = x_tmat.get_attenuation(mp) * m_per_km * db_factor
 
 ##s_tmatd = scattering.scatterer(sband, 10.0, 'water', diameters = d,
 ##  shape = 'raindrop')
@@ -50,26 +56,26 @@ x_tmat_atten = x_tmat.get_attenuation(mp) * (10.0 * N.log10(N.e))
 ##x_tmat_refd = 10.0 * N.log10(x_tmatd.get_reflectivity(mp))
 ##x_tmat_attend = x_tmatd.get_attenuation(mp) * (10.0 * N.log10(N.e))
 
-s_ray = scattering.scatterer(sband, 10.0, 'water', diameters = d)
+s_ray = scattering.scatterer(sband, T, 'water', diameters=d)
 s_ray.set_scattering_model('rayleigh')
-s_ray_ref = 10.0 * N.log10(s_ray.get_reflectivity(mp))
-s_ray_atten = s_ray.get_attenuation(mp) * (10.0 * N.log10(N.e))
+s_ray_ref = 10.0 * N.log10(s_ray.get_reflectivity_factor(mp)) + ref_adjust
+s_ray_atten = s_ray.get_attenuation(mp) * m_per_km * db_factor
 #ref_ray_a = 10.0 * N.log10(720 * dsd.mp_N0 / (dsd.mp_slope_3rd(l) ** 7))
 
-s_mie = scattering.scatterer(sband, 10.0, 'water', diameters = d)
+s_mie = scattering.scatterer(sband, T, 'water', diameters=d)
 s_mie.set_scattering_model('mie')
-s_mie_ref = 10.0 * N.log10(s_mie.get_reflectivity(mp))
-s_mie_atten = s_mie.get_attenuation(mp) * (10.0 * N.log10(N.e))
+s_mie_ref = 10.0 * N.log10(s_mie.get_reflectivity_factor(mp)) + ref_adjust
+s_mie_atten = s_mie.get_attenuation(mp) * m_per_km * db_factor
 
-x_ray = scattering.scatterer(xband, 10.0, 'water', diameters = d)
+x_ray = scattering.scatterer(xband, T, 'water', diameters=d)
 x_ray.set_scattering_model('rayleigh')
-x_ray_ref = 10.0 * N.log10(x_ray.get_reflectivity(mp))
-x_ray_atten = x_ray.get_attenuation(mp) * (10.0 * N.log10(N.e))
+x_ray_ref = 10.0 * N.log10(x_ray.get_reflectivity_factor(mp)) + ref_adjust
+x_ray_atten = x_ray.get_attenuation(mp) * m_per_km * db_factor
 
-x_mie = scattering.scatterer(xband, 10.0, 'water', diameters = d)
+x_mie = scattering.scatterer(xband, T, 'water', diameters=d)
 x_mie.set_scattering_model('mie')
-x_mie_ref = 10.0 * N.log10(x_mie.get_reflectivity(mp))
-x_mie_atten = x_mie.get_attenuation(mp) * (10.0 * N.log10(N.e))
+x_mie_ref = 10.0 * N.log10(x_mie.get_reflectivity_factor(mp)) + ref_adjust
+x_mie_atten = x_mie.get_attenuation(mp) * m_per_km * db_factor
 
 ##s_mie_0 = scattering.scatterer(sband, 0.0, 'water', diameters = d)
 ##s_mie_0.set_scattering_model('mie')
@@ -86,8 +92,8 @@ x_mie_atten = x_mie.get_attenuation(mp) * (10.0 * N.log10(N.e))
 ##ref_mie_n20 = 10.0 * N.log10(s_mie_n20.get_reflectivity(mp))
 ##atten_mie_n20 = s_mie_n20.get_attenuation(mp) * (10.0 * N.log10(N.e))
 
-d = d.squeeze()
-l = l.squeeze()
+d = d.squeeze() * cm_per_m
+l = l.squeeze() * g_per_kg
 
 P.subplot(2, 2, 1)
 P.semilogy(d, s_ray.sigma_b, 'b--', label = 'Rayleigh (10cm)')
@@ -104,7 +110,7 @@ P.semilogy(d[::5], x_tmat.sigma_b[::5], 'rx', label = 'T-matrix (3.21cm)')
 P.legend(loc = 'lower right', prop = FontProperties(size = 'smaller'))
 P.xlabel('Diameter (cm)', fontsize = 'smaller')
 #P.ylabel('Backscatter Cross-section (cm^2)')
-P.ylabel(r'$\sigma_b \rm{(cm^2)}$')
+P.ylabel(r'$\sigma_b \rm{(m^2)}$')
 P.setp(P.getp(P.gca(), 'yticklabels'), fontsize = 'smaller')
 P.setp(P.getp(P.gca(), 'xticklabels'), fontsize = 'smaller')
 #P.title('Backscatter for Mie and Rayleigh Scattering')
@@ -124,7 +130,7 @@ P.plot(l[::5], x_tmat_ref[::5], 'rx', label = 'T-matrix (3.21cm)')
 ##P.plot(l, ref_mie_n20, label = 'Mie (-20oC)')
 ##P.plot(l, ref_ray_a, label = 'Analytical MP')
 #P.legend(loc = 'lower right')
-P.xlabel('Rain Content (kg/m^3)', fontsize = 'smaller')
+P.xlabel('Rain Content (g/m^3)', fontsize = 'smaller')
 P.ylabel('Ze (dBZ)', fontsize = 'smaller')
 P.setp(P.getp(P.gca(), 'yticklabels'), fontsize = 'smaller')
 P.setp(P.getp(P.gca(), 'xticklabels'), fontsize = 'smaller')
@@ -145,7 +151,7 @@ P.semilogy(d[::5], x_tmat.sigma_e[::5], 'rx', label = 'T-matrix (3.21cm)')
 #P.legend(loc = 'lower right')
 P.xlabel('Diameter (cm)', fontsize = 'smaller')
 #P.ylabel('Extinction Cross-section (cm^2)')
-P.ylabel(r'$\sigma_e \rm{(cm^2)}$')
+P.ylabel(r'$\sigma_e \rm{(m^2)}$')
 P.setp(P.getp(P.gca(), 'yticklabels'), fontsize = 'smaller')
 P.setp(P.getp(P.gca(), 'xticklabels'), fontsize = 'smaller')
 #P.title('Backscatter for Mie and Rayleigh Scattering')
@@ -164,7 +170,7 @@ P.plot(l[::5], x_tmat_atten[::5], 'rx', label = 'T-matrix (3.21cm)')
 ##P.plot(l, atten_mie_20, label = 'Mie (20oC)')
 ##P.plot(l, atten_mie_n20, label = 'Mie (-20oC)')
 #P.legend(loc = 'upper left')
-P.xlabel('Rain Content (kg/m^3)', fontsize = 'smaller')
+P.xlabel('Rain Content (g/m^3)', fontsize = 'smaller')
 P.ylabel('1-way Attenuation (db/km)', fontsize = 'smaller')
 P.setp(P.getp(P.gca(), 'yticklabels'), fontsize = 'smaller')
 P.setp(P.getp(P.gca(), 'xticklabels'), fontsize = 'smaller')

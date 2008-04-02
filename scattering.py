@@ -3,16 +3,18 @@ import numpy as N
 import scipy.special as ss
 import scipy.integrate as si
 import _tmatrix as _tmat
+from constants import mm_per_m, cm_per_m
 
-__all__ = ['ice','mie','raindrop_axis_ratios','rayleigh','rayleigh2',
-    'rayleigh_gans','ref_rs','refractive_index','refractive_index0','scatterer',
-    'tmatrix','water']
+__all__ = ['ice', 'mie', 'raindrop_axis_ratios', 'rayleigh', 'rayleigh2',
+    'rayleigh_gans', 'ref_rs', 'refractive_index', 'refractive_index0',
+    'scatterer', 'tmatrix', 'water']
 
 def refractive_index(material, wavelength, temp = 20.0):
     '''Calculates the complex refractive index using an expand Debye formula. 
     The argument to the function gives another function which will return the
-    necessary constants.  Temperature is in Celsius, Wavelength in cm'''
+    necessary constants.  Temperature is in Celsius, Wavelength in m'''
     (eps_s, eps_inf, alpha, lam_s, sigma) = _material_dict[material](temp)
+    wavelength *= cm_per_m
     lam_ratio = (lam_s / wavelength) ** (1 - alpha)
     sin_alpha = N.sin(N.pi * alpha / 2.0)
     denom = 1 + 2 * lam_ratio * sin_alpha + lam_ratio * lam_ratio
@@ -25,25 +27,25 @@ def refractive_index(material, wavelength, temp = 20.0):
 
 def raindrop_axis_ratios(d):
     '''Calculates the axis ratio for an oblate spheroid approximating a raindrop
-    given the (equi-volume) diameter of a spherical drop.  Diameter is in mm.'''
-    return 0.9951 + d * (0.0251 + d * (-0.03644 + d * (0.00503 - 0.0002492 * d)))
+    given the (equi-volume) diameter of a spherical drop.  Diameter is in m.'''
+    d *= mm_per_m
+    return .9951 + d * (0.0251 + d * (-0.03644 + d * (0.00503 - 0.0002492 * d)))
 
-def mie(m, d, lam, shape):
+def mie(m, d, lam, shape=None):
     '''Computation of Mie Efficiencies for given
     complex refractive-index ratio m=m'+im"
-    and size parameter x=k0*a, where k0= wave number in ambient
-    medium, a=sphere radius, using complex Mie Coefficients
-    an and bn for n=1 to nmax,
+    and diameter and wavelength (which should have the same units), using
+    complex Mie Coefficients an and bn for n=1 to nmax, calculated using 
+    mie_abcd.
     s. Bohren and Huffman (1983) BEWI:TDD122, p. 103,119-122,477.
-    Result: efficiencies for extinction (qext),
-    scattering (qsca), absorption (qabs), backscattering (qb),
-    asymmetry parameter (asy=<costeta>) and (qratio=qb/qsca).
-    Uses the function "Mie_abcd" for an and bn, for n=1 to nmax.
-    C. Matzler, May 2002.'''
+    C. Matzler, May 2002.
+    Returns: Backward and forward scattering matrices (in the same units as
+    lambda) and the scattering efficiency.
+    '''
 
     xs = N.pi * d / lam
     if(m.imag < 0):
-        m = m.real - 1.0j*m.imag
+        m = N.conj(m)
 
     #Want to make sure we can accept single arguments or arrays
     try:
@@ -160,7 +162,7 @@ def rayleigh_gans(m, d, lam, shape):
         f = N.sqrt(f2)
         lz = (1 + f2) / f2 * (1 - (1. / f) * N.arctan(f))
     elif shape == 'prolate':
-        raise NotImplementedError
+        e2 = e**2
         lz = (1 - e2) / e2 * (N.log((1 + e) / (1 - e)) / (2 * e)  - 1)
     else:
         raise NotImplementedError, 'Unimplemented shape: %s' % shape
@@ -223,15 +225,16 @@ def tmatrix(m, d, lam, shape):
     return S_frwd, S_bkwd, qsca
 
 def refractive_index0(material, wavelength, temp = 20.0):
-  material_dict = dict(water=water, ice=ice)
-  (eps_s, eps_inf, alpha, lam_s, sigma) = material_dict[material](temp)
+    material_dict = dict(water=water, ice=ice)
+    (eps_s, eps_inf, alpha, lam_s, sigma) = material_dict[material](temp)
+    wavelength *= cm_per_m
 
-  lam_ratio = lam_s / wavelength
-  denom = 1 + lam_ratio * lam_ratio
-  eps_real = eps_inf + (eps_s - eps_inf) / denom
-  eps_imag = (eps_s - eps_inf) * lam_ratio / denom
-  
-  return N.sqrt(eps_real - 1.0j * eps_imag)
+    lam_ratio = lam_s / wavelength
+    denom = 1 + lam_ratio * lam_ratio
+    eps_real = eps_inf + (eps_s - eps_inf) / denom
+    eps_imag = (eps_s - eps_inf) * lam_ratio / denom
+
+    return N.sqrt(eps_real + 1.0j * eps_imag)
 
 def water(temp):
     eps_s = 78.54*(1.0 - 4.579e-3 * (temp-25.0) + 1.19e-5 * (temp-25.0)**2 \
@@ -253,7 +256,7 @@ def ice(temp):
 #Used to lookup functions that specify parameters given the material
 _material_dict = dict(water=water, ice=ice)
   
-def ref_rs(lam, temp):
+def ref_rs(wavelength, temp):
     eps_inf = 5.5
     eps_0_slope = -0.3759468439
     eps_0_int = 190.4835017
@@ -261,8 +264,6 @@ def ref_rs(lam, temp):
     C_TO_KELVIN = 273.15
     LAMBDA_TEMP_INC = 10.0
     MAX_LAMBDA_INDEX = 4
-
-    wavelength = lam / 100.0
 
     delta_lambda_slope = N.array([-.00135,-.00071,-.001418,-.0000261,-.0000261])
     delta_lambda_int = N.array([ .0359, .0224, .0153, .00112, .000859 ])
@@ -277,7 +278,7 @@ def ref_rs(lam, temp):
         * (temp - lambda_index * LAMBDA_TEMP_INC)\
         + delta_lambda_int[lambda_index]
 
-    eps_0 = eps_0_slope * (temp + 273.0) + eps_0_int
+    eps_0 = eps_0_slope * (temp + C_TO_KELVIN) + eps_0_int
 
     lambda_ratio = delta_lambda / wavelength
     eps_denom = 1 + lambda_ratio * lambda_ratio
@@ -290,14 +291,18 @@ class scatterer(object):
     type_map = dict(mie=mie, rayleigh=rayleigh, gans=rayleigh_gans,
       tmatrix=tmatrix)
     def __init__(self, wavelength, temperature, type='water', shape='sphere',
-      diameters=None):
+      diameters=None, ref_index=None):
         self.wavelength = wavelength
         self.temperature = temperature
         self.type = type
-        self.m = refractive_index(self.type, self.wavelength, self.temperature)
+        if ref_index is None:
+            self.m = refractive_index(self.type, self.wavelength,
+                self.temperature)
+        else:
+            self.m = ref_index
         self.shape = shape
         if diameters == None:
-          self.diameters = N.linspace(0, 1, 100)
+          self.diameters = N.linspace(0, .01, 100) # in meters
         else:
           self.diameters = diameters
         self.x = N.pi * self.diameters / self.wavelength
@@ -320,31 +325,53 @@ class scatterer(object):
             print 'Invalid scattering model.'
             print 'Valid choices are: %s' % str(scatterer.type_map.keys())
     def get_reflectivity(self, dsd_weights):
-        return si.trapz(self.sigma_b * dsd_weights,
-            x=self.diameters * 10.0, axis=0) * (1.0e6
-            * self.wavelength**4) / (N.pi**5 * 0.93)
+        return si.trapz(self.sigma_b * dsd_weights, x=self.diameters, axis=0)
+
+    def get_reflectivity_factor(self, dsd_weights):
+        return self.get_reflectivity(dsd_weights) * self.wavelength**4 / (
+            N.pi**5 * 0.93)
+
     def get_attenuation(self, dsd_weights):
-        return 1.0e-1 * si.trapz(self.sigma_e * dsd_weights,
-            x=self.diameters * 10.0, axis=0)
+        return si.trapz(self.sigma_e * dsd_weights, x=self.diameters, axis=0)
 
 if __name__ == '__main__':
     import pylab as P
-    print 'm for Water, 10.0cm, and 10 oC: %f'\
-        % refractive_index('water', 10.0, 10.0)
+    from constants import cm_per_m
+    lam = .1
+    print 'm for Water, %.1fcm, and 10 oC: %f'\
+        % (lam * cm_per_m, refractive_index('water', lam, 10.0))
     T = N.arange(-25.0,25.0,1.0)
-    m = refractive_index('water',10.0,T)
-    m_old = refractive_index0('water',10.0,T)
-    m_rs = N.array([N.sqrt(ref_rs(10.0,temp)) for temp in T])
-    P.subplot(1,2,1)
-    P.plot(T,m.real,T,m_old.real,T,m_rs.real)
+    m = refractive_index('water', lam, T)
+    m_old = refractive_index0('water', lam, T)
+    m_rs = N.array([ref_rs(lam, temp) for temp in T])
+
+    P.subplot(2,2,1)
+    P.plot(T, m.real, T, m_old.real, T, m_rs.real)
     P.grid()
-    P.xlabel('Temperature (oC)')
+    P.xlabel(r'Temperature ($^{o}$C)')
     P.title('Real Part')
     P.legend(["Mod. Form", "Orig. Form", 'RS Form'])
-    P.subplot(1,2,2)
-    P.plot(T,m.imag,T,m_old.imag,T,m_rs.imag)
+
+    P.subplot(2,2,2)
+    P.plot(T, m.imag, T, m_old.imag, T, m_rs.imag)
     P.grid()
-    P.xlabel('Temperature (oC)')
+    P.xlabel(r'Temperature ($^{o}$C)')
     P.title('Imaginary Part')
-    P.legend(["Mod. Form", "Orig. Form", 'RS Form'], loc = 'upper left')
+    P.legend(["Mod. Form", "Orig. Form", 'RS Form'], loc = 'upper right')
+
+    P.subplot(2,2,3)
+    P.plot(T, abs((m**2-1)/(m**2+2))**2, T, abs((m_old**2-1)/(m_old**2+2))**2,
+        T, abs((m_rs**2-1)/(m_rs**2+2))**2)
+    P.grid()
+    P.xlabel(r'Temperature ($^{o}$C)')
+    P.title(r'|Kw|$^2$')
+    P.legend(["Mod. Form", "Orig. Form", 'RS Form'])
+
+    P.subplot(2,2,4)
+    P.plot(T, ((m**2-1)/(m**2+2)).imag, T, ((m_old**2-1)/(m_old**2+2)).imag,
+        T, ((m_rs**2-1)/(m_rs**2+2)).imag)
+    P.grid()
+    P.xlabel(r'Temperature ($^{o}$C)')
+    P.title('Imaginary Part of Kw')
+    P.legend(["Mod. Form", "Orig. Form", 'RS Form'], loc = 'upper right')
     P.show()

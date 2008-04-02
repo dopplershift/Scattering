@@ -3,8 +3,9 @@ C                                                                   *
 C   Computation of the coefficients for the generalized Chebyshev   *
 C   shape by interpolating the values given in Table 1 of Chuang    *
 C   and Beard (1990). It is assumed that the particle radius AXI    *
-C   is given in mm.                                                 *
+C   is given in m.                                                  *
 C                                                                   *
+C   Changed by RMAY to take AXI in m instead of mm                  *
 C   Reference:                                                      *
 C   Chuang, C.C. and K.V. Beard, 1990: A numerical model for the    *
 C     equilibrium shape of electrified raindrops. J. Atmos. Sci.,   *
@@ -12,11 +13,12 @@ C     47(11), 1374-1389.                                            *
 C                                                                   *
 C********************************************************************
 
-      SUBROUTINE DROP (RAT,AXI)
+      SUBROUTINE DROP (RAT,AXI0)
       PARAMETER (NC=10, NG=60)
       IMPLICIT REAL*8 (A-H,O-Z)
-      REAL*8 X(NG),W(NG),C(0:NC)
+      REAL*8 X(NG),W(NG),C(0:NC),AXI
       COMMON /CDROP/ C,R0V
+      AXI = AXI0 * 1000.
       IF (AXI.LT.0.3332103D0) THEN
          C(0) = 0.0D0
          C(1) = 0.0D0
