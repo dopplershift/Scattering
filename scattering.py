@@ -142,12 +142,12 @@ def rayleigh(m, d, lam, shape):
     empty = N.zeros(d.shape, dtype=N.complex64)
     Kw = (m**2 - 1.0)/(m**2 + 2.0)
     S = Kw * N.pi**2 / (2 * lam**2) * d**3
-    qsca = (32.0/3.0) * d**2 * N.abs(S)**2
+    qsca = (32.0/3.0) * (N.abs(S)/d)**2
     qabs = 4.0 * Kw.imag * N.pi * d / lam
     qext = qsca + qabs
     #Hack here so that extinction cross section can be correctly retrieved from
     #the forward scattering matrix
-    S_frwd = S.real + 1.0j * qext * N.pi * d**2 / 4.0
+    S_frwd = S.real + 1.0j * qext * N.pi * d**2 / (8.0 * lam)
     fmat = N.array([[S_frwd, empty], [empty, S_frwd]])
     bmat = N.array([[S, empty], [empty, -S]])
     return fmat, bmat, qsca
