@@ -57,7 +57,7 @@ def mie(m, d, lam, shape):
     qsca = N.zeros(xlist.size)
 ##    qext = N.zeros(xlist.size)
 ##    qabs = N.zeros(xlist.size)
-    for i,x in enumerate(xlist):
+    for i,x in enumerate(xlist.flat):
         if float(x)==0.0:               # To avoid a singularity at x=0
             qsca[i] = 0.0
 ##            qext[i] = 0.0
@@ -307,10 +307,12 @@ class scatterer(object):
         try:
             fmat, bmat, qsca = scatterer.type_map[type](self.m, self.diameters,
                 self.wavelength, shape=self.shape)
-            self.sigma_e = 2 * self.wavelength * fmat[1,1].imag
-            self.sigma_s = qsca * self.sigma_g
+            self.sigma_e = (2 * self.wavelength
+                * fmat[1,1].imag).reshape(self.diameters.shape)
+            self.sigma_s = qsca.reshape(self.diameters.shape) * self.sigma_g
             self.sigma_a = self.sigma_e - self.sigma_s
-            self.sigma_b = 4 * N.pi * N.abs(bmat[1,1])**2
+            self.sigma_b = 4 * N.pi * N.abs(bmat[1,1].reshape(
+                self.diameters.shape))**2
             self.S_frwd = fmat
             self.S_bkwd = bmat
             self.model = type
@@ -318,12 +320,12 @@ class scatterer(object):
             print 'Invalid scattering model.'
             print 'Valid choices are: %s' % str(scatterer.type_map.keys())
     def get_reflectivity(self, dsd_weights):
-        return si.trapz(self.sigma_b[:,N.newaxis] * dsd_weights,
-            x=self.diameters[:,N.newaxis] * 10.0, axis=0) * (1.0e6
+        return si.trapz(self.sigma_b * dsd_weights,
+            x=self.diameters * 10.0, axis=0) * (1.0e6
             * self.wavelength**4) / (N.pi**5 * 0.93)
     def get_attenuation(self, dsd_weights):
-        return 1.0e-1 * si.trapz(self.sigma_e[:,N.newaxis] * dsd_weights,
-            x=self.diameters[:,N.newaxis] * 10.0, axis=0)
+        return 1.0e-1 * si.trapz(self.sigma_e * dsd_weights,
+            x=self.diameters * 10.0, axis=0)
 
 if __name__ == '__main__':
     import pylab as P
