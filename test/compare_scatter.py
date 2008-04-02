@@ -1,5 +1,4 @@
-import pylab as P
-import matplotlib as M
+import matplotlib.pyplot as P
 import numpy as N
 import scipy.integrate as si
 import scattering, dsd
@@ -23,8 +22,8 @@ def plot_csecs(scatterers):
     P.subplot(2,2,4)
     plot_csec(s, s.sigma_b, '\sigma_{b}')
   
-d = N.linspace(0.01, 2.0, 200)
-l = N.linspace(0.01, 25.0, 100) / 1000.0
+d = N.linspace(0.01, 2.0, 200).reshape(200,1)
+l = N.linspace(0.01, 25.0, 100).reshape(1,100)
 mp = dsd.mp_from_lwc(d*10.0, l)
 sband = 10.0
 xband = 3.21
@@ -87,6 +86,9 @@ x_mie_atten = x_mie.get_attenuation(mp) * (10.0 * N.log10(N.e))
 ##ref_mie_n20 = 10.0 * N.log10(s_mie_n20.get_reflectivity(mp))
 ##atten_mie_n20 = s_mie_n20.get_attenuation(mp) * (10.0 * N.log10(N.e))
 
+d = d.squeeze()
+l = l.squeeze()
+
 P.subplot(2, 2, 1)
 P.semilogy(d, s_ray.sigma_b, 'b--', label = 'Rayleigh (10cm)')
 P.semilogy(d, s_mie.sigma_b, 'b-', label = 'Mie (10cm)')
@@ -116,7 +118,7 @@ P.plot(l, x_mie_ref, 'r-', label = 'Mie (3.21cm)')
 P.plot(l[::5], x_tmat_ref[::5], 'rx', label = 'T-matrix (3.21cm)')
 ##P.plot(l, s_tmat_refd, 'g-', label = 'Raindrop (10cm)')
 ##P.plot(l, x_tmat_refd, 'g--', label = 'Raindrop (3.21cm)')
-P.axis([0, 0.025, 0, 70])
+#P.axis([0, 0.025, 0, 70])
 ##P.plot(l, ref_mie_0, label = 'Mie (0oC)')
 ##P.plot(l, ref_mie_20, label = 'Mie (20oC)')
 ##P.plot(l, ref_mie_n20, label = 'Mie (-20oC)')
@@ -157,7 +159,7 @@ P.plot(l, x_mie_atten, 'r-', label = 'Mie (3.21cm)')
 P.plot(l[::5], x_tmat_atten[::5], 'rx', label = 'T-matrix (3.21cm)')
 ##P.plot(l, s_tmat_attend, 'g-', label = 'Raindrop (10cm)')
 ##P.plot(l, x_tmat_attend, 'g--', label = 'Raindrop (3.21cm)')
-P.axis([0, 0.025, 0, 25])
+#P.axis([0, 0.025, 0, 25])
 ##P.plot(l, atten_mie_0, label = 'Mie (0oC)')
 ##P.plot(l, atten_mie_20, label = 'Mie (20oC)')
 ##P.plot(l, atten_mie_n20, label = 'Mie (-20oC)')
