@@ -502,10 +502,11 @@ C  AMPLITUDE MATRIX [Eqs. (2)-(4) of Ref. 6]
       CALL AMPL (NMAX,LAM,THET0,THET,PHI0,PHI,ALPHA,BETA,
      &           S11,S12,S21,S22)
 !								 VV, VH, HV, HH ??????
-			SMAT_BKWD(1,1) = S11
-			SMAT_BKWD(1,2) = S12
-			SMAT_BKWD(2,1) = S21
-			SMAT_BKWD(2,2) = S22
+!Due to "swizzle" components, put them sensibly here
+			SMAT_BKWD(1,1) = S22
+			SMAT_BKWD(1,2) = S21
+			SMAT_BKWD(2,1) = S12
+			SMAT_BKWD(2,2) = S11
 			
 C  FORWARD SCATTERING
 
@@ -519,10 +520,11 @@ C  AMPLITUDE MATRIX [Eqs. (2)-(4) of Ref. 6]
       CALL AMPL (NMAX,LAM,THET0,THET,PHI0,PHI,ALPHA,BETA,
      &           S11,S12,S21,S22)
 !								 VV, VH, HV, HH ??????
-			SMAT_FRWD(1,1) = S11
-			SMAT_FRWD(1,2) = S12
-			SMAT_FRWD(2,1) = S21
-			SMAT_FRWD(2,2) = S22
+!Due to "swizzle" components, put them sensibly here
+			SMAT_FRWD(1,1) = S22
+			SMAT_FRWD(1,2) = S21
+			SMAT_FRWD(2,1) = S12
+			SMAT_FRWD(2,2) = S11
 
 C  PHASE MATRIX [Eqs. (13)-(29) of Ref. 6]
 !      Z11=0.5D0*(S11*DCONJG(S11)+S12*DCONJG(S12)
@@ -2016,6 +2018,7 @@ C**********************************************************************
       F=DFLOAT(N)
       DO 100 I=1,K
           M=N+1-I
+          X=0D0
           IF(I.EQ.1) X=A-B/((F+A)*F)
           IF(I.EQ.2) X=(Z(N)-A)*4D0+Z(N)
           IF(I.EQ.3) X=(Z(N-1)-Z(N))*1.6D0+Z(N-1)
