@@ -3,10 +3,11 @@ import numpy as N
 import scattering, dsd
 from constants import cm_per_m, g_per_kg, mm_per_m, m_per_km
   
-d = N.linspace(0.01, 2.0, 200).reshape(200,1) / cm_per_m
+d = N.linspace(0.01, 1.0, 200).reshape(200,1) / cm_per_m
 l = N.linspace(0.01, 25.0, 100).reshape(1,100) / g_per_kg
 dist = dsd.mp_from_lwc(d, l)
-lam = 0.1
+#lam = 0.1
+lam = 0.0321
 temp = 10.0
 
 db_factor = 10.0 * N.log10(N.e)
@@ -16,7 +17,7 @@ print 'Mie'
 mie = scattering.scatterer(lam, temp, 'water', diameters=d)
 mie.set_scattering_model('mie')
 
-print 'rayleight'
+print 'rayleigh'
 ray = scattering.scatterer(lam, temp, 'water', diameters=d)
 ray.set_scattering_model('rayleigh')
 
@@ -32,7 +33,7 @@ oblate.set_scattering_model('tmatrix')
 
 print 'TMAT R'
 raindrop = scattering.scatterer(lam, temp, 'water', diameters=d,
-    shape='raindrop')
+    shape='sphere')
 raindrop.set_scattering_model('tmatrix')
 
 print 'Done'
@@ -43,6 +44,7 @@ lines = ['r-', 'g-', 'b-', 'k-', 'k--']
 names = ['Mie', 'Rayleigh', 'Rayleigh-Gans', 'T-Matrix (oblate)',
     'T-matrix (raindrop)']
 models = [mie, ray, oblate_rg, oblate, raindrop]
+#models = [oblate_rg]
 
 for model, line, name in zip(models, lines, names):
     ref = 10.0 * N.log10(model.get_reflectivity_factor(dist)) + ref_adjust
@@ -61,6 +63,8 @@ P.subplot(2,2,1)
 P.legend(loc = 'lower right')
 P.xlabel('Diameter (cm)')
 P.ylabel(r'$\sigma_b \rm{(m^2)}$')
+#P.semilogy(d, 4 * N.pi * N.abs(oblate_rg.bmat[1,1].reshape(
+#                self.diameters.shape))**2
 
 P.subplot(2,2,2)
 P.xlabel('Rain Content (g/m^3)')
