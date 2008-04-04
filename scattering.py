@@ -27,9 +27,14 @@ def refractive_index(material, wavelength, temp = 20.0):
 
 def raindrop_axis_ratios(d):
     '''Calculates the axis ratio for an oblate spheroid approximating a raindrop
-    given the (equi-volume) diameter of a spherical drop.  Diameter is in m.'''
-    d *= mm_per_m
-    return .9951 + d * (0.0251 + d * (-0.03644 + d * (0.00503 - 0.0002492 * d)))
+    given the (equi-volume) diameter of a spherical drop.  Diameter is in m.
+    The original polynomial is documented in Brandes et al. (2002), but the
+    coefficients listed don't agree with the graph in Brandes et al. (2004).
+    The coefficients here yield the correct graph (and more sensible values)'''
+    d = d * mm_per_m
+    ab = 0.995 + d * (0.0251 + d * (-0.0364 + d * (0.005303 - 0.0002492 * d)))
+    ab[d>8] = ab[d<=8].min()
+    return ab
 
 def mie(m, d, lam, shape=None):
     '''Computation of Mie Efficiencies for given
@@ -160,9 +165,10 @@ def rayleigh_gans(m, d, lam, shape):
         rat = raindrop_axis_ratios(d)
         f2 = rat**-2 - 1
         f = N.sqrt(f2)
-        lz = (1 + f2) / f2 * (1 - (1. / f) * N.arctan(f))
+        lz = ((1 + f2) / f2) * (1 - (1. / f) * N.arctan(f))
     elif shape == 'prolate':
-        e2 = e**2
+        #TODO: Need to finish this
+        raise NotImplementedError
         lz = (1 - e2) / e2 * (N.log((1 + e) / (1 - e)) / (2 * e)  - 1)
     else:
         raise NotImplementedError, 'Unimplemented shape: %s' % shape
@@ -180,7 +186,7 @@ def rayleigh_gans(m, d, lam, shape):
         [empty, -1. / ((eps_r - 1) * lz + 1)]], dtype=N.complex64)
     
     #Calculate a scattering efficiency using the rayleigh approximation
-    qsca = (32.0/3.0) * N.abs(bmat[1,1,:])**2 / d**2
+    qsca = (32.0/3.0) * N.abs(bmat[0,0,:])**2 / d**2
     
     return fmat, bmat, qsca
 
@@ -191,7 +197,7 @@ def tmatrix(m, d, lam, shape):
     if shape == 'sphere':
         np = -1
         eccen = N.ones(d.shape)
-        eccen.fill(1.000001)
+        eccen.fill(1.000001) #According to Mischenko, using 1.0 can overflow
     elif shape == 'oblate':
         np = -1
         eccen = 1. / raindrop_axis_ratios(d)
@@ -313,10 +319,10 @@ class scatterer(object):
             fmat, bmat, qsca = scatterer.type_map[type](self.m, self.diameters,
                 self.wavelength, shape=self.shape)
             self.sigma_e = (2 * self.wavelength
-                * fmat[1,1].imag).reshape(self.diameters.shape)
+                * fmat[0,0].imag).reshape(self.diameters.shape)
             self.sigma_s = qsca.reshape(self.diameters.shape) * self.sigma_g
             self.sigma_a = self.sigma_e - self.sigma_s
-            self.sigma_b = 4 * N.pi * N.abs(bmat[1,1].reshape(
+            self.sigma_b = 4 * N.pi * N.abs(bmat[0,0].reshape(
                 self.diameters.shape))**2
             self.S_frwd = fmat
             self.S_bkwd = bmat
