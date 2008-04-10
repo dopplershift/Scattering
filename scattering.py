@@ -192,6 +192,7 @@ def rayleigh_gans(m, d, lam, shape):
 
 def tmatrix(m, d, lam, shape):
     equal_volume = 1.0
+    d = N.atleast_1d(d)
     
     #Set up parameters that depend on what shape model we use for the scatterer
     if shape == 'sphere':
