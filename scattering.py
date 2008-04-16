@@ -179,14 +179,21 @@ def rayleigh_gans(m, d, lam, shape):
     l = (1 - lz) / 2.
     Sfact = N.pi**2 * d**3 * (eps_r - 1) / (6. * lam**2)
     
+    #Calculate a scattering efficiency using the rayleigh approximation
+    qsca = (32.0/3.0) * (N.abs(Sfact) / d)**2
+    qabs = (4./3.) * N.imag((eps_r - 1) / ((eps_r - 1) * l + 1)) * N.pi * d / lam
+    qext = qsca + qabs
+
+    #Hack here so that extinction cross section can be correctly retrieved from
+    #the forward scattering matrix
+    S_frwd = Sfact.real + 1.0j * qext * N.pi * d**2 / (8.0 * lam)
+
     #Get the forward and backward scattering matrices
-    fmat = Sfact * N.array([[1. / ((eps_r - 1) * l + 1), empty],
-        [empty, 1. / ((eps_r - 1) * lz + 1)]], dtype=N.complex64)
+    fmat = Sfact * N.array([[S_frwd, empty],
+        [empty, S_frwd]], dtype=N.complex64)
     bmat = Sfact * N.array([[1. / ((eps_r - 1) * l + 1), empty],
         [empty, -1. / ((eps_r - 1) * lz + 1)]], dtype=N.complex64)
     
-    #Calculate a scattering efficiency using the rayleigh approximation
-    qsca = (32.0/3.0) * (N.abs(bmat[0,0,:]) / d)**2
     
     return fmat, bmat, qsca
 
