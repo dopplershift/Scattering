@@ -160,7 +160,7 @@ def rayleigh(m, d, lam, shape):
 def rayleigh_gans(m, d, lam, shape):
     #Get the lambda_z parameter that is a function of the shape of the drop
     if shape == 'sphere':
-        lz = 1/3 * N.ones(d.shape)
+        lz = 1./3. * N.ones(d.shape)
     elif shape == 'oblate':
         rat = raindrop_axis_ratios(d)
         f2 = rat**-2 - 1
@@ -186,7 +186,7 @@ def rayleigh_gans(m, d, lam, shape):
         [empty, -1. / ((eps_r - 1) * lz + 1)]], dtype=N.complex64)
     
     #Calculate a scattering efficiency using the rayleigh approximation
-    qsca = (32.0/3.0) * N.abs(bmat[0,0,:])**2 / d**2
+    qsca = (32.0/3.0) * (N.abs(bmat[0,0,:]) / d)**2
     
     return fmat, bmat, qsca
 
