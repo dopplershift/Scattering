@@ -322,9 +322,9 @@ class scatterer(object):
         self.x = N.pi * self.diameters / self.wavelength
         self.sigma_g = (N.pi / 4.0) * self.diameters ** 2
         self.model = 'None'
-    def set_scattering_model(self, type):
+    def set_scattering_model(self, model):
         try:
-            fmat, bmat, qsca = scatterer.type_map[type](self.m, self.diameters,
+            fmat, bmat, qsca = scatterer.type_map[model](self.m, self.diameters,
                 self.wavelength, shape=self.shape)
             self.sigma_e = (2 * self.wavelength
                 * fmat[0,0].imag).reshape(self.diameters.shape)
@@ -334,10 +334,11 @@ class scatterer(object):
                 self.diameters.shape))**2
             self.S_frwd = fmat
             self.S_bkwd = bmat
-            self.model = type
+            self.model = model
         except KeyError:
-            print 'Invalid scattering model.'
-            print 'Valid choices are: %s' % str(scatterer.type_map.keys())
+            msg = 'Invalid scattering model: %s\n' % model
+            msg += 'Valid choices are: %s' % str(scatterer.type_map.keys())
+            raise ValueError(msg)
     def get_reflectivity(self, dsd_weights):
         return si.trapz(self.sigma_b * dsd_weights, x=self.diameters, axis=0)
 
