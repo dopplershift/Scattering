@@ -13,38 +13,32 @@ temp = 10.0
 db_factor = 10.0 * N.log10(N.e)
 ref_adjust = 180
 
-print 'Mie'
 mie = scattering.scatterer(lam, temp, 'water', diameters=d)
 mie.set_scattering_model('mie')
 
-print 'rayleigh'
 ray = scattering.scatterer(lam, temp, 'water', diameters=d)
 ray.set_scattering_model('rayleigh')
 
-print 'RG'
 oblate_rg = scattering.scatterer(lam, temp, 'water', diameters=d,
     shape='oblate')
 oblate_rg.set_scattering_model('gans')
 
-print 'TMAT O'
+sphere_rg = scattering.scatterer(lam, temp, 'water', diameters=d,
+    shape='sphere')
+sphere_rg.set_scattering_model('gans')
+
 oblate = scattering.scatterer(lam, temp, 'water', diameters=d,
     shape='oblate')
 oblate.set_scattering_model('tmatrix')
 
-print 'TMAT R'
-raindrop = scattering.scatterer(lam, temp, 'water', diameters=d,
-    shape='sphere')
-raindrop.set_scattering_model('tmatrix')
-
-print 'Done'
 d = d.squeeze() * cm_per_m
 l = l.squeeze() * g_per_kg
 
 lines = ['r-', 'g-', 'b-', 'k-', 'k--']
-names = ['Mie', 'Rayleigh', 'Rayleigh-Gans', 'T-Matrix (oblate)',
-    'T-matrix (raindrop)']
-models = [mie, ray, oblate_rg, oblate, raindrop]
-#models = [oblate_rg]
+names = ['Rayleigh', 'Rayleigh-Gans (oblate)', 'Rayleigh-Gans (sphere)',
+    'Mie', 'T-Matrix (oblate)']
+#models = [ray, oblate_rg, sphere_rg, mie, oblate]
+models = [ray, oblate_rg, sphere_rg]
 
 for model, line, name in zip(models, lines, names):
     ref = 10.0 * N.log10(model.get_reflectivity_factor(dist)) + ref_adjust
