@@ -2,8 +2,8 @@
 import numpy as N
 import scipy.special as ss
 import scipy.integrate as si
+from scipy.constants import milli, centi
 import _tmatrix as _tmat
-from constants import mm_per_m, cm_per_m
 
 __all__ = ['ice', 'mie', 'raindrop_axis_ratios', 'rayleigh', 'rayleigh2',
     'rayleigh_gans', 'ref_rs', 'refractive_index', 'refractive_index0',
@@ -14,7 +14,7 @@ def refractive_index(material, wavelength, temp = 20.0):
     The argument to the function gives another function which will return the
     necessary constants.  Temperature is in Celsius, Wavelength in m'''
     (eps_s, eps_inf, alpha, lam_s, sigma) = _material_dict[material](temp)
-    wavelength *= cm_per_m
+    wavelength /= centi
     lam_ratio = (lam_s / wavelength) ** (1 - alpha)
     sin_alpha = N.sin(N.pi * alpha / 2.0)
     denom = 1 + 2 * lam_ratio * sin_alpha + lam_ratio * lam_ratio
@@ -31,7 +31,7 @@ def raindrop_axis_ratios(d):
     The original polynomial is documented in Brandes et al. (2002), but the
     coefficients listed don't agree with the graph in Brandes et al. (2004).
     The coefficients here yield the correct graph (and more sensible values)'''
-    d = d * mm_per_m
+    d = d / milli
     ab = 0.995 + d * (0.0251 + d * (-0.0364 + d * (0.005303 - 0.0002492 * d)))
     ab[d>8] = ab[d<=8].min()
     return ab
@@ -241,7 +241,7 @@ def tmatrix(m, d, lam, shape):
 def refractive_index0(material, wavelength, temp = 20.0):
     material_dict = dict(water=water, ice=ice)
     (eps_s, eps_inf, alpha, lam_s, sigma) = material_dict[material](temp)
-    wavelength *= cm_per_m
+    wavelength /= centi
 
     lam_ratio = lam_s / wavelength
     denom = 1 + lam_ratio * lam_ratio
@@ -351,10 +351,9 @@ class scatterer(object):
 
 if __name__ == '__main__':
     import pylab as P
-    from constants import cm_per_m
     lam = .1
     print 'm for Water, %.1fcm, and 10 oC: %f'\
-        % (lam * cm_per_m, refractive_index('water', lam, 10.0))
+        % (lam / centi, refractive_index('water', lam, 10.0))
     T = N.arange(-25.0,25.0,1.0)
     m = refractive_index('water', lam, T)
     m_old = refractive_index0('water', lam, T)
