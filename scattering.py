@@ -350,7 +350,7 @@ class scatterer(object):
         return si.trapz(self.sigma_e * dsd_weights, x=self.diameters, axis=0)
 
 if __name__ == '__main__':
-    import pylab as P
+    import matplotlib.pyplot as plt
     lam = .1
     print 'm for Water, %.1fcm, and 10 oC: %f'\
         % (lam / centi, refractive_index('water', lam, 10.0))
@@ -359,33 +359,33 @@ if __name__ == '__main__':
     m_old = refractive_index0('water', lam, T)
     m_rs = N.array([ref_rs(lam, temp) for temp in T])
 
-    P.subplot(2,2,1)
-    P.plot(T, m.real, T, m_old.real, T, m_rs.real)
-    P.grid()
-    P.xlabel(r'Temperature ($^{o}$C)')
-    P.title('Real Part')
-    P.legend(["Mod. Form", "Orig. Form", 'RS Form'])
+    plt.subplot(2,2,1)
+    plt.plot(T, m.real, T, m_old.real, T, m_rs.real)
+    plt.grid()
+    plt.xlabel(r'Temperature ($^{o}$C)')
+    plt.title('Real Part')
+    plt.legend(["Mod. Form", "Orig. Form", 'RS Form'])
 
-    P.subplot(2,2,2)
-    P.plot(T, m.imag, T, m_old.imag, T, m_rs.imag)
-    P.grid()
-    P.xlabel(r'Temperature ($^{o}$C)')
-    P.title('Imaginary Part')
-    P.legend(["Mod. Form", "Orig. Form", 'RS Form'], loc = 'upper right')
+    plt.subplot(2,2,2)
+    plt.plot(T, m.imag, T, m_old.imag, T, m_rs.imag)
+    plt.grid()
+    plt.xlabel(r'Temperature ($^{o}$C)')
+    plt.title('Imaginary Part')
+    plt.legend(["Mod. Form", "Orig. Form", 'RS Form'], loc = 'upper right')
 
-    P.subplot(2,2,3)
-    P.plot(T, abs((m**2-1)/(m**2+2))**2, T, abs((m_old**2-1)/(m_old**2+2))**2,
+    plt.subplot(2,2,3)
+    plt.plot(T, abs((m**2-1)/(m**2+2))**2, T, abs((m_old**2-1)/(m_old**2+2))**2,
         T, abs((m_rs**2-1)/(m_rs**2+2))**2)
-    P.grid()
-    P.xlabel(r'Temperature ($^{o}$C)')
-    P.title(r'|Kw|$^2$')
-    P.legend(["Mod. Form", "Orig. Form", 'RS Form'])
+    plt.grid()
+    plt.xlabel(r'Temperature ($^{o}$C)')
+    plt.title(r'|Kw|$^2$')
+    plt.legend(["Mod. Form", "Orig. Form", 'RS Form'])
 
-    P.subplot(2,2,4)
-    P.plot(T, ((m**2-1)/(m**2+2)).imag, T, ((m_old**2-1)/(m_old**2+2)).imag,
+    plt.subplot(2,2,4)
+    plt.plot(T, ((m**2-1)/(m**2+2)).imag, T, ((m_old**2-1)/(m_old**2+2)).imag,
         T, ((m_rs**2-1)/(m_rs**2+2)).imag)
-    P.grid()
-    P.xlabel(r'Temperature ($^{o}$C)')
-    P.title('Imaginary Part of Kw')
-    P.legend(["Mod. Form", "Orig. Form", 'RS Form'], loc = 'upper right')
-    P.show()
+    plt.grid()
+    plt.xlabel(r'Temperature ($^{o}$C)')
+    plt.title('Imaginary Part of Kw')
+    plt.legend(["Mod. Form", "Orig. Form", 'RS Form'], loc = 'upper right')
+    plt.show()
