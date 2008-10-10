@@ -7,6 +7,7 @@ flags = ['-W', '-Wall', '-march=opteron', '-O3']
 
 def configuration(parent_package='', top_path=None):
     config = Configuration('scattering', parent_package, top_path,
+        version='0.8',
         author = 'Ryan May',
         author_email = 'rmay31@gmail.com',
         platforms = ['Linux'],
