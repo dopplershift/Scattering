@@ -1,16 +1,16 @@
-import matplotlib.pyplot as P
-import numpy as N
+import matplotlib.pyplot as plt
+import numpy as np
 import scattering, dsd
-from constants import cm_per_m, g_per_kg, mm_per_m, m_per_km
+import scipy.constants as consts
   
-d = N.linspace(0.01, 1.0, 200).reshape(200,1) / cm_per_m
-l = N.linspace(0.01, 25.0, 100).reshape(1,100) / g_per_kg
+d = np.linspace(0.01, 1.0, 200).reshape(200,1) * consts.centi
+l = np.linspace(0.01, 25.0, 100).reshape(1,100) / consts.kilo
 dist = dsd.mp_from_lwc(d, l)
 #lam = 0.1
 lam = 0.0321
 temp = 10.0
 
-db_factor = 10.0 * N.log10(N.e)
+db_factor = 10.0 * np.log10(np.e)
 ref_adjust = 180
 
 mie = scattering.scatterer(lam, temp, 'water', diameters=d)
@@ -31,8 +31,8 @@ oblate = scattering.scatterer(lam, temp, 'water', diameters=d,
     shape='oblate')
 oblate.set_scattering_model('tmatrix')
 
-d = d.squeeze() * cm_per_m
-l = l.squeeze() * g_per_kg
+d = d.squeeze() / consts.centi
+l = l.squeeze() * consts.kilo
 
 lines = ['r-', 'g-', 'b-', 'k-', 'k--']
 names = ['Rayleigh', 'Rayleigh-Gans (oblate)', 'Rayleigh-Gans (sphere)',
@@ -41,37 +41,37 @@ names = ['Rayleigh', 'Rayleigh-Gans (oblate)', 'Rayleigh-Gans (sphere)',
 models = [ray, oblate_rg, sphere_rg]
 
 for model, line, name in zip(models, lines, names):
-    ref = 10.0 * N.log10(model.get_reflectivity_factor(dist)) + ref_adjust
-    atten = model.get_attenuation(dist) * m_per_km * db_factor
+    ref = 10.0 * np.log10(model.get_reflectivity_factor(dist)) + ref_adjust
+    atten = model.get_attenuation(dist) * consts.kilo * db_factor
 
-    P.subplot(2, 2, 1)
-    P.semilogy(d, model.sigma_b, line, label=name)
-    P.subplot(2, 2, 2)
-    P.plot(l, ref, line, label=name)
-    P.subplot(2, 2, 3)
-    P.semilogy(d, model.sigma_e, line, label=name)
-    P.subplot(2, 2, 4)
-    P.plot(l, atten, line, label=name)
+    plt.subplot(2, 2, 1)
+    plt.semilogy(d, model.sigma_b, line, label=name)
+    plt.subplot(2, 2, 2)
+    plt.plot(l, ref, line, label=name)
+    plt.subplot(2, 2, 3)
+    plt.semilogy(d, model.sigma_e, line, label=name)
+    plt.subplot(2, 2, 4)
+    plt.plot(l, atten, line, label=name)
 
-P.subplot(2,2,1)
-P.legend(loc = 'lower right')
-P.xlabel('Diameter (cm)')
-P.ylabel(r'$\sigma_b \rm{(m^2)}$')
-#P.semilogy(d, 4 * N.pi * N.abs(oblate_rg.bmat[1,1].reshape(
+plt.subplot(2,2,1)
+plt.legend(loc = 'lower right')
+plt.xlabel('Diameter (cm)')
+plt.ylabel(r'$\sigma_b \rm{(m^2)}$')
+#plt.semilogy(d, 4 * np.pi * np.abs(oblate_rg.bmat[1,1].reshape(
 #                self.diameters.shape))**2
 
-P.subplot(2,2,2)
-P.xlabel('Rain Content (g/m^3)')
-P.ylabel(r'Z$_{e}$ (dBZ)')
+plt.subplot(2,2,2)
+plt.xlabel('Rain Content (g/m^3)')
+plt.ylabel(r'Z$_{e}$ (dBZ)')
 
-P.subplot(2,2,3)
-P.xlabel('Diameter (cm)')
-P.ylabel(r'$\sigma_e \rm{(m^2)}$')
+plt.subplot(2,2,3)
+plt.xlabel('Diameter (cm)')
+plt.ylabel(r'$\sigma_e \rm{(m^2)}$')
 
-P.subplot(2,2,4)
-P.xlabel('Rain Content (g/m^3)')
-P.ylabel('1-way Attenuation (db/km)')
-P.gcf().text(0.5,0.95,'Comparison of Various Scattering models',
+plt.subplot(2,2,4)
+plt.xlabel('Rain Content (g/m^3)')
+plt.ylabel('1-way Attenuation (db/km)')
+plt.gcf().text(0.5,0.95,'Comparison of Various Scattering models',
   horizontalalignment='center',fontsize=16)
-P.show()
+plt.show()
 

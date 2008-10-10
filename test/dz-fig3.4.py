@@ -1,27 +1,27 @@
-import pylab as P
-import numpy as N
+import matplotlib.pyplot as plt
+import numpy as np
 import scattering
-from constants import cm_per_m
+import scipy.constants as consts
 
-nd = N.logspace(-2, 1, 200)
+nd = np.logspace(-2, 1, 200)
 T = 0.0
-wavelengths = N.array([0.86, 3.21, 5.5, 10.0]) / cm_per_m
+wavelengths = np.array([0.86, 3.21, 5.5, 10.0]) * consts.centi
 colors = ['r','b','g','c']
 
-P.figure()
+plt.figure()
 for lam,color in zip(wavelengths,colors):
-    d = nd * lam / N.pi
+    d = nd * lam / np.pi
     scat = scattering.scatterer(lam, T, 'water', diameters=d)
     scat.set_scattering_model('tmatrix')
-    P.loglog(nd, scat.sigma_e * 4/(N.pi * d**2), color+'-',
-        label='%5.2fcm Tmat' % (lam * cm_per_m))
+    plt.loglog(nd, scat.sigma_e * 4/(np.pi * d**2), color+'-',
+        label='%5.2fcm Tmat' % (lam / consts.centi))
 #    scat.set_scattering_model('mie')
-#    P.loglog(nd, scat.sigma_e * 4/(N.pi * d**2), color+'x',
-#        label='%5.2fcm Mie'%(lam * cm_per_m))
+#    plt.loglog(nd, scat.sigma_e * 4/(np.pi * d**2), color+'x',
+#        label='%5.2fcm Mie'%(lam / consts.centi))
 
-P.legend(loc='lower right')
-P.xlabel('Normalized Drop Diameter')
-P.ylabel('Normalized Extinction Cross-Section')
-P.xlim(0.01,10.0)
-P.ylim(1.0e-3,10)
-P.show()
+plt.legend(loc='lower right')
+plt.xlabel('Normalized Drop Diameter')
+plt.ylabel('Normalized Extinction Cross-Section')
+plt.xlim(0.01,10.0)
+plt.ylim(1.0e-3,10)
+plt.show()
