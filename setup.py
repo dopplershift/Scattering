@@ -11,7 +11,7 @@ def configuration(parent_package='', top_path=None):
         author = 'Ryan May',
         author_email = 'rmay31@gmail.com',
         platforms = ['Linux'],
-        description = 'Software for simulating weather radar data.',
+        description = 'Software for simulating hydrometeor scattering.',
         url = 'http://weather.ou.edu/~rmay/research.html')
     
     lapack = get_info('lapack_opt')
