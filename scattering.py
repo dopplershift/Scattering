@@ -180,7 +180,7 @@ def rayleigh_gans(m, d, lam, shape):
     Sfact = N.pi**2 * d**3 * (eps_r - 1) / (6. * lam**2)
     
     #Calculate a scattering efficiency using the rayleigh approximation
-    qsca = (32.0/3.0) * (N.abs(Sfact) / d)**2
+    qsca = (32.0/3.0) * (N.abs(Sfact / ((eps_r - 1) * l + 1)) / d)**2
     qabs = (4./3.) * N.imag((eps_r - 1) / ((eps_r - 1) * l + 1)) * N.pi * d / lam
     qext = qsca + qabs
 
