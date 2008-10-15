@@ -334,12 +334,24 @@ class scatterer(object):
         try:
             fmat, bmat, qsca = scatterer.type_map[model](self.m, self.diameters,
                 self.wavelength, shape=self.shape)
-            self.sigma_e = (2 * self.wavelength
+            
+            #Calculate extinction cross-section
+            self.sigma_eh = (2 * self.wavelength
                 * fmat[0,0].imag).reshape(self.diameters.shape)
+            self.sigma_ev = (2 * self.wavelength
+                * fmat[1,1].imag).reshape(self.diameters.shape)
+            self.sigma_e = self.sigma_eh
+
             self.sigma_s = qsca.reshape(self.diameters.shape) * self.sigma_g
             self.sigma_a = self.sigma_e - self.sigma_s
-            self.sigma_b = 4 * N.pi * N.abs(bmat[0,0].reshape(
+
+            #Calculate back-scatter cross-section
+            self.sigma_bh = 4 * N.pi * N.abs(bmat[0,0].reshape(
                 self.diameters.shape))**2
+            self.sigma_bv = 4 * N.pi * N.abs(bmat[1,1].reshape(
+                self.diameters.shape))**2
+            self.sigma_b = self.sigma_bh
+
             self.S_frwd = fmat
             self.S_bkwd = bmat
             self.model = model
@@ -347,15 +359,25 @@ class scatterer(object):
             msg = 'Invalid scattering model: %s\n' % model
             msg += 'Valid choices are: %s' % str(scatterer.type_map.keys())
             raise ValueError(msg)
-    def get_reflectivity(self, dsd_weights):
-        return si.trapz(self.sigma_b * dsd_weights, x=self.diameters, axis=0)
+    def get_reflectivity(self, dsd_weights, polar='h'):
+        if polar == 'h':
+            return si.trapz(self.sigma_bh * dsd_weights, x=self.diameters,
+                axis=0)
+        else:
+            return si.trapz(self.sigma_bv * dsd_weights, x=self.diameters,
+                axis=0)
 
-    def get_reflectivity_factor(self, dsd_weights):
-        return self.get_reflectivity(dsd_weights) * self.wavelength**4 / (
-            N.pi**5 * 0.93)
+    def get_reflectivity_factor(self, dsd_weights, polar='h'):
+        return (self.get_reflectivity(dsd_weights, polar=polar)
+            * self.wavelength**4 / (N.pi**5 * 0.93))
 
-    def get_attenuation(self, dsd_weights):
-        return si.trapz(self.sigma_e * dsd_weights, x=self.diameters, axis=0)
+    def get_attenuation(self, dsd_weights, polar='h'):
+        if polar == 'h':
+            return si.trapz(self.sigma_eh * dsd_weights, x=self.diameters,
+                axis=0)
+        else:
+            return si.trapz(self.sigma_ev * dsd_weights, x=self.diameters,
+                axis=0)
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
