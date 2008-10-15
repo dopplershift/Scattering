@@ -178,24 +178,32 @@ def rayleigh_gans(m, d, lam, shape):
     empty = N.zeros(d.shape, dtype=N.complex64)
     l = (1 - lz) / 2.
     Sfact = N.pi**2 * d**3 * (eps_r - 1) / (6. * lam**2)
+    polar_h = 1. / ((eps_r - 1) * l + 1)
+    polar_v = 1. / ((eps_r - 1) * lz + 1)
     
     #Calculate a scattering efficiency using the rayleigh approximation
-    qsca = (32.0/3.0) * (N.abs(Sfact / ((eps_r - 1) * l + 1)) / d)**2
-    qabs = (4./3.) * N.imag((eps_r - 1) / ((eps_r - 1) * l + 1)) * N.pi * d / lam
-    qext = qsca + qabs
+    qsca_h = (32.0/3.0) * (N.abs(Sfact * polar_h) / d)**2
+    qabs_h = (4./3.) * N.imag((eps_r - 1) * polar_h) * N.pi * d / lam
+    qext_h = qsca_h + qabs_h
+
+    #Calculate a scattering efficiency using the rayleigh approximation
+    qsca_v = (32.0/3.0) * (N.abs(Sfact * polar_v) / d)**2
+    qabs_v = (4./3.) * N.imag((eps_r - 1) * polar_v) * N.pi * d / lam
+    qext_v = qsca_v + qabs_v
+
+    #Get the forward and backward scattering matrices
+    fmat = Sfact * N.array([[polar_h, empty],
+                            [empty, polar_v]], dtype=N.complex64)
 
     #Hack here so that extinction cross section can be correctly retrieved from
     #the forward scattering matrix
-    S_frwd = Sfact.real + 1.0j * qext * N.pi * d**2 / (8.0 * lam)
+    fmat[0,0].imag = qext_h * N.pi * d**2 / (8.0 * lam)
+    fmat[1,1].imag = qext_v * N.pi * d**2 / (8.0 * lam)
 
-    #Get the forward and backward scattering matrices
-    fmat = Sfact * N.array([[S_frwd, empty],
-        [empty, S_frwd]], dtype=N.complex64)
-    bmat = Sfact * N.array([[1. / ((eps_r - 1) * l + 1), empty],
-        [empty, -1. / ((eps_r - 1) * lz + 1)]], dtype=N.complex64)
+    bmat = Sfact * N.array([[polar_h, empty],
+                            [empty, -polar_v]], dtype=N.complex64)
     
-    
-    return fmat, bmat, qsca
+    return fmat, bmat, qsca_h
 
 def tmatrix(m, d, lam, shape):
     equal_volume = 1.0
