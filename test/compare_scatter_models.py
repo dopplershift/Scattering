@@ -37,46 +37,37 @@ l = l.squeeze() * consts.kilo
 lines = ['r-', 'g-', 'b-', 'k-', 'k--']
 names = ['Rayleigh', 'Rayleigh-Gans (oblate)', 'Rayleigh-Gans (sphere)',
     'Mie', 'T-Matrix (oblate)']
-#models = [ray, oblate_rg, sphere_rg, mie, oblate]
-models = [ray, oblate_rg, sphere_rg]
+models = [ray, oblate_rg, sphere_rg, mie, oblate]
 
 for model, line, name in zip(models, lines, names):
-#    ref = 10.0 * np.log10(model.get_reflectivity_factor(dist)) + ref_adjust
-#    atten = model.get_attenuation(dist) * consts.kilo * db_factor
+    ref = 10.0 * np.log10(model.get_reflectivity_factor(dist)) + ref_adjust
+    atten = model.get_attenuation(dist) * consts.kilo * db_factor
 
     plt.subplot(2, 2, 1)
     plt.semilogy(d, model.sigma_b, line, label=name)
     plt.subplot(2, 2, 2)
-    plt.semilogy(d, model.sigma_a, line, label=name)
-#    plt.plot(l, ref, line, label=name)
+    plt.plot(l, ref, line, label=name)
     plt.subplot(2, 2, 3)
-    plt.semilogy(d, model.sigma_s, line, label=name)
-    plt.subplot(2, 2, 4)
     plt.semilogy(d, model.sigma_e, line, label=name)
-#    plt.plot(l, atten, line, label=name)
+    plt.subplot(2, 2, 4)
+    plt.plot(l, atten, line, label=name)
 
 plt.subplot(2,2,1)
 plt.legend(loc = 'lower right')
 plt.xlabel('Diameter (cm)')
 plt.ylabel(r'$\sigma_b \rm{(m^2)}$')
-#plt.semilogy(d, 4 * np.pi * np.abs(oblate_rg.bmat[1,1].reshape(
-#                self.diameters.shape))**2
 
 plt.subplot(2,2,2)
-#plt.xlabel('Rain Content (g/m^3)')
-#plt.ylabel(r'Z$_{e}$ (dBZ)')
-plt.xlabel('Diameter (cm)')
-plt.ylabel(r'$\sigma_a \rm{(m^2)}$')
+plt.xlabel('Rain Content (g/m^3)')
+plt.ylabel(r'Z$_{e}$ (dBZ)')
 
 plt.subplot(2,2,3)
 plt.xlabel('Diameter (cm)')
-plt.ylabel(r'$\sigma_s \rm{(m^2)}$')
+plt.ylabel(r'$\sigma_e \rm{(m^2)}$')
 
 plt.subplot(2,2,4)
-#plt.xlabel('Rain Content (g/m^3)')
-#plt.ylabel('1-way Attenuation (db/km)')
-plt.xlabel('Diameter (cm)')
-plt.ylabel(r'$\sigma_e \rm{(m^2)}$')
+plt.xlabel('Rain Content (g/m^3)')
+plt.ylabel('1-way Attenuation (db/km)')
 plt.gcf().text(0.5,0.95,'Comparison of Various Scattering models',
   horizontalalignment='center',fontsize=16)
 plt.show()
