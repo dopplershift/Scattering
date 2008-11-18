@@ -84,7 +84,7 @@ def mie(m, d, lam, shape=None):
 ##            qabs[i] = qext[i] - qsca[i]
             Sf = (1.0j * lam / (2 * N.pi)) * (n_factor * (an + bn)).sum()
             S_frwd[...,i] = N.array([[Sf, 0],[0, Sf]])
-            Sb = (1.0j * lam / (2 * N.pi)) * (n_factor * gn * (an - bn)).sum()
+            Sb = (-1.0j * lam / (2 * N.pi)) * (n_factor * gn * (an - bn)).sum()
             S_bkwd[...,i] = N.array([[-Sb, 0],[0, Sb]])
 ##            q = N.abs((c * gn * (an - bn)).sum())
 ##            qb[i] = q**2 / x2
@@ -154,7 +154,7 @@ def rayleigh(m, d, lam, shape):
     #the forward scattering matrix
     S_frwd = S.real + 1.0j * qext * N.pi * d**2 / (8.0 * lam)
     fmat = N.array([[S_frwd, empty], [empty, S_frwd]])
-    bmat = N.array([[S, empty], [empty, -S]])
+    bmat = N.array([[-S, empty], [empty, S]])
     return fmat, bmat, qsca
 
 def rayleigh_gans(m, d, lam, shape):
@@ -200,8 +200,8 @@ def rayleigh_gans(m, d, lam, shape):
     fmat[0,0].imag = qext_h * N.pi * d**2 / (8.0 * lam)
     fmat[1,1].imag = qext_v * N.pi * d**2 / (8.0 * lam)
 
-    bmat = Sfact * N.array([[polar_h, empty],
-                            [empty, -polar_v]], dtype=N.complex64)
+    bmat = Sfact * N.array([[-polar_h, empty],
+                            [empty, polar_v]], dtype=N.complex64)
     
     return fmat, bmat, qsca_h
 
@@ -236,7 +236,7 @@ def tmatrix(m, d, lam, shape):
     #forward and backward scattering matrices, as well as the scattering
     #efficiency
     for i,ds in enumerate(d):
-        if ds == 0:
+        if ds == 0.:
             continue
         qs,fmat,bmat = _tmat.tmatrix(ds/2.0,equal_volume,lam,m,eccen[i],np)
         sigma_g = (N.pi / 4.0) * ds ** 2
@@ -310,6 +310,8 @@ def ref_rs(wavelength, temp):
     return N.sqrt(eps_real - 1.0j*eps_imag)
 
 class scatterer(object):
+    #All scattering matrices returned here are in the Forward Scattering
+    #Aligned (FSA) convention
     type_map = dict(mie=mie, rayleigh=rayleigh, gans=rayleigh_gans,
       tmatrix=tmatrix)
     def __init__(self, wavelength, temperature, type='water', shape='sphere',
