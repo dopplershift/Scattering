@@ -213,7 +213,7 @@ def tmatrix(m, d, lam, shape):
     if shape == 'sphere':
         np = -1
         eccen = N.ones(d.shape)
-        eccen.fill(1.000001) #According to Mischenko, using 1.0 can overflow
+        eccen.fill(1.00000001) #According to Mischenko, using 1.0 can overflow
     elif shape == 'oblate':
         np = -1
         eccen = 1. / raindrop_axis_ratios(d)
