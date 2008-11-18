@@ -501,8 +501,9 @@ C  BACK-SCATTERING
 C  AMPLITUDE MATRIX [Eqs. (2)-(4) of Ref. 6]
       CALL AMPL (NMAX,LAM,THET0,THET,PHI0,PHI,ALPHA,BETA,
      &           S11,S12,S21,S22)
-!								 VV, VH, HV, HH ??????
-!Due to "swizzle" components, put them sensibly here
+!                 VV, VH, HV, HH since E-field is specified in
+! (theta,phi) system, which equates to (v, h)
+!Due to "swizzle" components, put them into more familiar layout
 			SMAT_BKWD(1,1) = S22
 			SMAT_BKWD(1,2) = S21
 			SMAT_BKWD(2,1) = S12
@@ -519,8 +520,9 @@ C  FORWARD SCATTERING
 C  AMPLITUDE MATRIX [Eqs. (2)-(4) of Ref. 6]
       CALL AMPL (NMAX,LAM,THET0,THET,PHI0,PHI,ALPHA,BETA,
      &           S11,S12,S21,S22)
-!								 VV, VH, HV, HH ??????
-!Due to "swizzle" components, put them sensibly here
+!                 VV, VH, HV, HH since E-field is specified in
+! (theta,phi) system, which equates to (v, h)
+!Due to "swizzle" components, put them into more familiar layout
 			SMAT_FRWD(1,1) = S22
 			SMAT_FRWD(1,2) = S21
 			SMAT_FRWD(2,1) = S12
