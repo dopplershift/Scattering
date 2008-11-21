@@ -337,26 +337,23 @@ class scatterer(object):
             fmat, bmat, qsca = scatterer.type_map[model](self.m, self.diameters,
                 self.wavelength, shape=self.shape)
             
+            self.model = model
+            self.S_frwd = fmat.reshape((2,2) + self.diameters.shape)
+            self.S_bkwd = bmat.reshape((2,2) + self.diameters.shape)
+
             #Calculate extinction cross-section
-            self.sigma_eh = (2 * self.wavelength
-                * fmat[0,0].imag).reshape(self.diameters.shape)
-            self.sigma_ev = (2 * self.wavelength
-                * fmat[1,1].imag).reshape(self.diameters.shape)
+            self.sigma_eh = 2 * self.wavelength * self.S_frwd[0,0].imag
+            self.sigma_ev = 2 * self.wavelength * self.S_frwd[1,1].imag
             self.sigma_e = self.sigma_eh
 
             self.sigma_s = qsca.reshape(self.diameters.shape) * self.sigma_g
             self.sigma_a = self.sigma_e - self.sigma_s
 
-            #Calculate back-scatter cross-section
-            self.sigma_bh = 4 * N.pi * N.abs(bmat[0,0].reshape(
-                self.diameters.shape))**2
-            self.sigma_bv = 4 * N.pi * N.abs(bmat[1,1].reshape(
-                self.diameters.shape))**2
+            #Calculate back-scatter cross-section. Negative sign on S_bkwd[0,0]
+            #accounts for negative in FSA
+            self.sigma_bh = 4 * N.pi * N.abs(-self.S_bkwd[0,0])**2
+            self.sigma_bv = 4 * N.pi * N.abs(self.S_bkwd[1,1])**2
             self.sigma_b = self.sigma_bh
-
-            self.S_frwd = fmat
-            self.S_bkwd = bmat
-            self.model = model
         except KeyError:
             msg = 'Invalid scattering model: %s\n' % model
             msg += 'Valid choices are: %s' % str(scatterer.type_map.keys())
