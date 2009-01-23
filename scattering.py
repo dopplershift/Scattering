@@ -10,7 +10,7 @@ __all__ = ['ice', 'mie', 'raindrop_axis_ratios', 'rayleigh', 'rayleigh2',
     'scatterer', 'tmatrix', 'water']
 
 def refractive_index(material, wavelength, temp = 20.0):
-    '''Calculates the complex refractive index using an expand Debye formula. 
+    '''Calculates the complex refractive index using an expand Debye formula.
     The argument to the function gives another function which will return the
     necessary constants.  Temperature is in Celsius, Wavelength in m'''
     (eps_s, eps_inf, alpha, lam_s, sigma) = _material_dict[material](temp)
@@ -40,7 +40,7 @@ def mie(m, d, lam, shape=None):
     '''Computation of Mie Efficiencies for given
     complex refractive-index ratio m=m'+im"
     and diameter and wavelength (which should have the same units), using
-    complex Mie Coefficients an and bn for n=1 to nmax, calculated using 
+    complex Mie Coefficients an and bn for n=1 to nmax, calculated using
     mie_abcd.
     s. Bohren and Huffman (1983) BEWI:TDD122, p. 103,119-122,477.
     C. Matzler, May 2002.
@@ -180,7 +180,7 @@ def rayleigh_gans(m, d, lam, shape):
     Sfact = N.pi**2 * d**3 * (eps_r - 1) / (6. * lam**2)
     polar_h = 1. / ((eps_r - 1) * l + 1)
     polar_v = 1. / ((eps_r - 1) * lz + 1)
-    
+
     #Calculate a scattering efficiency using the rayleigh approximation
     qsca_h = (32.0/3.0) * (N.abs(Sfact * polar_h) / d)**2
     qabs_h = (4./3.) * N.imag((eps_r - 1) * polar_h) * N.pi * d / lam
@@ -202,13 +202,13 @@ def rayleigh_gans(m, d, lam, shape):
 
     bmat = Sfact * N.array([[-polar_h, empty],
                             [empty, polar_v]], dtype=N.complex64)
-    
+
     return fmat, bmat, qsca_h
 
 def tmatrix(m, d, lam, shape):
     equal_volume = 1.0
     d = N.atleast_1d(d)
-    
+
     #Set up parameters that depend on what shape model we use for the scatterer
     if shape == 'sphere':
         np = -1
@@ -225,7 +225,7 @@ def tmatrix(m, d, lam, shape):
         eccen = N.ones(d.shape)
     else:
         raise NotImplementedError, 'Unimplemented shape: %s' % shape
-  
+
     #Initialize arrays
     S_frwd = N.zeros((2, 2, d.size), dtype=N.complex64)
     S_bkwd = N.zeros((2, 2, d.size), dtype=N.complex64)
@@ -243,7 +243,7 @@ def tmatrix(m, d, lam, shape):
         qsca[i] = qs * (lam ** 2 / (2 * N.pi)) / sigma_g
         S_frwd[...,i] = fmat
         S_bkwd[...,i] = bmat
-    
+
     return S_frwd, S_bkwd, qsca
 
 def refractive_index0(material, wavelength, temp = 20.0):
@@ -277,7 +277,7 @@ def ice(temp):
 
 #Used to lookup functions that specify parameters given the material
 _material_dict = dict(water=water, ice=ice)
-  
+
 def ref_rs(wavelength, temp):
     eps_inf = 5.5
     eps_0_slope = -0.3759468439
@@ -336,7 +336,7 @@ class scatterer(object):
         try:
             fmat, bmat, qsca = scatterer.type_map[model](self.m, self.diameters,
                 self.wavelength, shape=self.shape)
-            
+
             self.model = model
             self.S_frwd = fmat.reshape((2,2) + self.diameters.shape)
             self.S_bkwd = bmat.reshape((2,2) + self.diameters.shape)
