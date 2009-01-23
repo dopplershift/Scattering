@@ -353,6 +353,7 @@ class scatterer(object):
             #accounts for negative in FSA
             self.sigma_bh = 4 * N.pi * N.abs(-self.S_bkwd[0,0])**2
             self.sigma_bv = 4 * N.pi * N.abs(self.S_bkwd[1,1])**2
+            self.sigma_bhv = 4 * N.pi * N.abs(-self.S_bkwd[0,1])**2
             self.sigma_b = self.sigma_bh
         except KeyError:
             msg = 'Invalid scattering model: %s\n' % model
@@ -362,9 +363,14 @@ class scatterer(object):
         if polar == 'h':
             return si.trapz(self.sigma_bh * dsd_weights, x=self.diameters,
                 axis=0)
-        else:
+        elif polar == 'v':
             return si.trapz(self.sigma_bv * dsd_weights, x=self.diameters,
                 axis=0)
+        elif polar in ('hv', 'vh'):
+            return si.trapz(self.sigma_bhv * dsd_weights, x=self.diameters,
+                axis=0)
+        else:
+            raise ValueError('Invalid polarization specified: %s' % polar)
 
     def get_reflectivity_factor(self, dsd_weights, polar='h'):
         return (self.get_reflectivity(dsd_weights, polar=polar)
