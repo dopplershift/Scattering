@@ -314,6 +314,7 @@ class scatterer(object):
     #Aligned (FSA) convention
     type_map = dict(mie=mie, rayleigh=rayleigh, gans=rayleigh_gans,
       tmatrix=tmatrix)
+
     def __init__(self, wavelength, temperature, type='water', shape='sphere',
       diameters=None, ref_index=None):
         self.wavelength = wavelength
@@ -332,6 +333,7 @@ class scatterer(object):
         self.x = N.pi * self.diameters / self.wavelength
         self.sigma_g = (N.pi / 4.0) * self.diameters ** 2
         self.model = 'None'
+
     def set_scattering_model(self, model):
         try:
             fmat, bmat, qsca = scatterer.type_map[model](self.m, self.diameters,
@@ -359,6 +361,7 @@ class scatterer(object):
             msg = 'Invalid scattering model: %s\n' % model
             msg += 'Valid choices are: %s' % str(scatterer.type_map.keys())
             raise ValueError(msg)
+
     def get_reflectivity(self, dsd_weights, polar='h'):
         if polar == 'h':
             return si.trapz(self.sigma_bh * dsd_weights, x=self.diameters,
@@ -395,6 +398,19 @@ class scatterer(object):
         else:
             return self.wavelength * si.trapz(
                 self.S_frwd[1,1].real * dsd_weights, x=self.diameters, axis=0)
+
+    def get_backscatter_phase(self, dsd_weights, polar='h'):
+        if polar == 'h':
+            return np.angle(si.trapz(-self.S_bkwd[0,0] * dsd_weights,
+                x=self.diameters, axis=0))
+        elif polar == 'v':
+            return np.angle(si.trapz(self.S_bkwd[1,1] * dsd_weights,
+                x=self.diameters, axis=0))
+        elif polar in ('hv', 'vh'):
+            return np.angle(si.trapz(-self.S_bkwd[0,1] * dsd_weights,
+                x=self.diameters, axis=0))
+        else:
+            raise ValueError('Invalid polarization specified: %s' % polar)
 
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
