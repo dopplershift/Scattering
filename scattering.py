@@ -384,7 +384,7 @@ class scatterer(object):
             return si.trapz(self.sigma_ev * dsd_weights, x=self.diameters,
                 axis=0)
 
-    def get_propagation_phase(self, dsd_weights, polar='h'):
+    def get_propagation_wavenumber(self, dsd_weights, polar='h'):
         # Phase doesn't multiply by a factor of two, unlike attenuation,
         # because attenuation represents a decrease in power.  Phase and
         # attenuation, are two parts of the effective wavenumber, which is
