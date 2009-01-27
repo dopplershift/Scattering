@@ -384,6 +384,18 @@ class scatterer(object):
             return si.trapz(self.sigma_ev * dsd_weights, x=self.diameters,
                 axis=0)
 
+    def get_propagation_phase(self, dsd_weights, polar='h'):
+        # Phase doesn't multiply by a factor of two, unlike attenuation,
+        # because attenuation represents a decrease in power.  Phase and
+        # attenuation, are two parts of the effective wavenumber, which is
+        # used for the propagation of the electric field (amplitude)
+        if polar == 'h':
+            return self.wavelength * si.trapz(
+                self.S_frwd[0,0].real * dsd_weights, x=self.diameters, axis=0)
+        else:
+            return self.wavelength * si.trapz(
+                self.S_frwd[1,1].real * dsd_weights, x=self.diameters, axis=0)
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     lam = .1
