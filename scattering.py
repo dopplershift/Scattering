@@ -1,5 +1,5 @@
 #Various scattering functions
-import numpy as N
+import numpy as np
 import scipy.special as ss
 import scipy.integrate as si
 from scipy.constants import milli, centi
@@ -16,14 +16,14 @@ def refractive_index(material, wavelength, temp = 20.0):
     (eps_s, eps_inf, alpha, lam_s, sigma) = _material_dict[material](temp)
     wavelength /= centi
     lam_ratio = (lam_s / wavelength) ** (1 - alpha)
-    sin_alpha = N.sin(N.pi * alpha / 2.0)
+    sin_alpha = np.sin(np.pi * alpha / 2.0)
     denom = 1 + 2 * lam_ratio * sin_alpha + lam_ratio * lam_ratio
     eps_real = eps_inf + (eps_s - eps_inf) * ((1 + lam_ratio * sin_alpha)
         / denom)
-    eps_imag = (eps_s - eps_inf) * lam_ratio * (N.cos(N.pi * alpha / 2.0)
+    eps_imag = (eps_s - eps_inf) * lam_ratio * (np.cos(np.pi * alpha / 2.0)
         / denom) + sigma * wavelength / 18.8496e10
 
-    return N.sqrt(eps_real + 1.0j * eps_imag)
+    return np.sqrt(eps_real + 1.0j * eps_imag)
 
 def raindrop_axis_ratios(d):
     '''Calculates the axis ratio for an oblate spheroid approximating a raindrop
@@ -48,22 +48,22 @@ def mie(m, d, lam, shape=None):
     lambda) and the scattering efficiency.
     '''
 
-    xs = N.pi * d / lam
+    xs = np.pi * d / lam
     if(m.imag < 0):
-        m = N.conj(m)
+        m = np.conj(m)
 
     #Want to make sure we can accept single arguments or arrays
     try:
         xs.size
         xlist = xs
     except:
-        xlist = N.array(xs)
+        xlist = np.array(xs)
 
-    S_frwd = N.zeros((2, 2, d.size), dtype=N.complex64)
-    S_bkwd = N.zeros((2, 2, d.size), dtype=N.complex64)
-    qsca = N.zeros(xlist.size)
-##    qext = N.zeros(xlist.size)
-##    qabs = N.zeros(xlist.size)
+    S_frwd = np.zeros((2, 2, d.size), dtype=np.complex64)
+    S_bkwd = np.zeros((2, 2, d.size), dtype=np.complex64)
+    qsca = np.zeros(xlist.size)
+##    qext = np.zeros(xlist.size)
+##    qabs = np.zeros(xlist.size)
     for i,x in enumerate(xlist.flat):
         if float(x)==0.0:               # To avoid a singularity at x=0
             qsca[i] = 0.0
@@ -72,21 +72,21 @@ def mie(m, d, lam, shape=None):
 ##            qb[i] = 0.0
         else:
             an,bn = _mie_abcd(m,x)
-            n = N.arange(1, an.size + 1)
+            n = np.arange(1, anp.size + 1)
             c = 2 * n + 1
             gn = (-1)**n
             x2 = x * x
-##            an_mag = N.abs(an)
-##            bn_mag = N.abs(bn)
+##            an_mag = np.abs(an)
+##            bn_mag = np.abs(bn)
             n_factor = c / 2.0
-            qsca[i] = (2.0 / x2) * (c * (N.abs(an)**2 + N.abs(bn)**2)).sum()
-##            qext[i] = (2.0 / x2) * (c * (an.real + bn.real)).sum()
+            qsca[i] = (2.0 / x2) * (c * (np.abs(an)**2 + np.abs(bn)**2)).sum()
+##            qext[i] = (2.0 / x2) * (c * (anp.real + bnp.real)).sum()
 ##            qabs[i] = qext[i] - qsca[i]
-            Sf = (1.0j * lam / (2 * N.pi)) * (n_factor * (an + bn)).sum()
-            S_frwd[...,i] = N.array([[Sf, 0],[0, Sf]])
-            Sb = (-1.0j * lam / (2 * N.pi)) * (n_factor * gn * (an - bn)).sum()
-            S_bkwd[...,i] = N.array([[-Sb, 0],[0, Sb]])
-##            q = N.abs((c * gn * (an - bn)).sum())
+            Sf = (1.0j * lam / (2 * np.pi)) * (n_factor * (an + bn)).sum()
+            S_frwd[...,i] = np.array([[Sf, 0],[0, Sf]])
+            Sb = (-1.0j * lam / (2 * np.pi)) * (n_factor * gn * (an - bn)).sum()
+            S_bkwd[...,i] = np.array([[-Sb, 0],[0, Sb]])
+##            q = np.abs((c * gn * (an - bn)).sum())
 ##            qb[i] = q**2 / x2
     return S_frwd, S_bkwd, qsca
 
@@ -98,7 +98,7 @@ def _mie_abcd(m, x):
     p. 100, 477 in Bohren and Huffman (1983) BEWI:TDD122
     C. Matzler, June 2002'''
 
-    nmax = N.round(2+x+4*x**(1.0/3.0))
+    nmax = np.round(2+x+4*x**(1.0/3.0))
     mx = m * x
 
     # Get the spherical bessel functions of the first (j) and second (y) kind,
@@ -135,7 +135,7 @@ def _mie_abcd(m, x):
     return an, bn
 
 def rayleigh2(m, d, lam, shape):
-    x = N.pi * d / lam
+    x = np.pi * d / lam
     Kw = (m**2 - 1.0)/(m**2 + 2.0)
     qb = 4.0 * abs(Kw)**2 * x ** 4
     qsca = (2.0/3.0) * qb
@@ -144,76 +144,76 @@ def rayleigh2(m, d, lam, shape):
     return qext, qsca, qabs
 
 def rayleigh(m, d, lam, shape):
-    empty = N.zeros(d.shape, dtype=N.complex64)
+    empty = np.zeros(d.shape, dtype=np.complex64)
     Kw = (m**2 - 1.0)/(m**2 + 2.0)
-    S = Kw * N.pi**2 / (2 * lam**2) * d**3
-    qsca = (32.0/3.0) * (N.abs(S)/d)**2
-    qabs = 4.0 * Kw.imag * N.pi * d / lam
+    S = Kw * np.pi**2 / (2 * lam**2) * d**3
+    qsca = (32.0/3.0) * (np.abs(S)/d)**2
+    qabs = 4.0 * Kw.imag * np.pi * d / lam
     qext = qsca + qabs
     #Hack here so that extinction cross section can be correctly retrieved from
     #the forward scattering matrix
-    S_frwd = S.real + 1.0j * qext * N.pi * d**2 / (8.0 * lam)
-    fmat = N.array([[S_frwd, empty], [empty, S_frwd]])
-    bmat = N.array([[-S, empty], [empty, S]])
+    S_frwd = S.real + 1.0j * qext * np.pi * d**2 / (8.0 * lam)
+    fmat = np.array([[S_frwd, empty], [empty, S_frwd]])
+    bmat = np.array([[-S, empty], [empty, S]])
     return fmat, bmat, qsca
 
 def rayleigh_gans(m, d, lam, shape):
     #Get the lambda_z parameter that is a function of the shape of the drop
     if shape == 'sphere':
-        lz = 1./3. * N.ones(d.shape)
+        lz = 1./3. * np.ones(d.shape)
     elif shape == 'oblate':
         rat = raindrop_axis_ratios(d)
         f2 = rat**-2 - 1
-        f = N.sqrt(f2)
-        lz = ((1 + f2) / f2) * (1 - (1. / f) * N.arctan(f))
+        f = np.sqrt(f2)
+        lz = ((1 + f2) / f2) * (1 - (1. / f) * np.arctan(f))
     elif shape == 'prolate':
         #TODO: Need to finish this
         raise NotImplementedError
-        lz = (1 - e2) / e2 * (N.log((1 + e) / (1 - e)) / (2 * e)  - 1)
+        lz = (1 - e2) / e2 * (np.log((1 + e) / (1 - e)) / (2 * e)  - 1)
     else:
         raise NotImplementedError, 'Unimplemented shape: %s' % shape
 
     #Calculate the constants outside of the matrix
     eps_r = m**2
-    empty = N.zeros(d.shape, dtype=N.complex64)
+    empty = np.zeros(d.shape, dtype=np.complex64)
     l = (1 - lz) / 2.
-    Sfact = N.pi**2 * d**3 * (eps_r - 1) / (6. * lam**2)
+    Sfact = np.pi**2 * d**3 * (eps_r - 1) / (6. * lam**2)
     polar_h = 1. / ((eps_r - 1) * l + 1)
     polar_v = 1. / ((eps_r - 1) * lz + 1)
 
     #Calculate a scattering efficiency using the rayleigh approximation
-    qsca_h = (32.0/3.0) * (N.abs(Sfact * polar_h) / d)**2
-    qabs_h = (4./3.) * N.imag((eps_r - 1) * polar_h) * N.pi * d / lam
+    qsca_h = (32.0/3.0) * (np.abs(Sfact * polar_h) / d)**2
+    qabs_h = (4./3.) * np.imag((eps_r - 1) * polar_h) * np.pi * d / lam
     qext_h = qsca_h + qabs_h
 
     #Calculate a scattering efficiency using the rayleigh approximation
-    qsca_v = (32.0/3.0) * (N.abs(Sfact * polar_v) / d)**2
-    qabs_v = (4./3.) * N.imag((eps_r - 1) * polar_v) * N.pi * d / lam
+    qsca_v = (32.0/3.0) * (np.abs(Sfact * polar_v) / d)**2
+    qabs_v = (4./3.) * np.imag((eps_r - 1) * polar_v) * np.pi * d / lam
     qext_v = qsca_v + qabs_v
 
     #Get the forward and backward scattering matrices
-    fmat = Sfact * N.array([[polar_h, empty],
-                            [empty, polar_v]], dtype=N.complex64)
+    fmat = Sfact * np.array([[polar_h, empty],
+                            [empty, polar_v]], dtype=np.complex64)
 
     #Hack here so that extinction cross section can be correctly retrieved from
     #the forward scattering matrix
-    fmat[0,0].imag = qext_h * N.pi * d**2 / (8.0 * lam)
-    fmat[1,1].imag = qext_v * N.pi * d**2 / (8.0 * lam)
+    fmat[0,0].imag = qext_h * np.pi * d**2 / (8.0 * lam)
+    fmat[1,1].imag = qext_v * np.pi * d**2 / (8.0 * lam)
 
-    bmat = Sfact * N.array([[-polar_h, empty],
-                            [empty, polar_v]], dtype=N.complex64)
+    bmat = Sfact * np.array([[-polar_h, empty],
+                            [empty, polar_v]], dtype=np.complex64)
 
     return fmat, bmat, qsca_h
 
 def tmatrix(m, d, lam, shape):
     equal_volume = 1.0
-    d = N.atleast_1d(d)
+    d = np.atleast_1d(d)
 
     #Set up parameters that depend on what shape model we use for the scatterer
     if shape == 'sphere':
         np = -1
-        eccen = N.ones(d.shape)
-        eccen.fill(1.00000001) #According to Mischenko, using 1.0 can overflow
+        eccen = np.ones(d.shape)
+        eccenp.fill(1.00000001) #According to Mischenko, using 1.0 can overflow
     elif shape == 'oblate':
         np = -1
         eccen = 1. / raindrop_axis_ratios(d)
@@ -222,14 +222,14 @@ def tmatrix(m, d, lam, shape):
         np = -1
     elif shape == 'raindrop':
         np = -3
-        eccen = N.ones(d.shape)
+        eccen = np.ones(d.shape)
     else:
         raise NotImplementedError, 'Unimplemented shape: %s' % shape
 
     #Initialize arrays
-    S_frwd = N.zeros((2, 2, d.size), dtype=N.complex64)
-    S_bkwd = N.zeros((2, 2, d.size), dtype=N.complex64)
-    qsca = N.zeros(d.shape)
+    S_frwd = np.zeros((2, 2, d.size), dtype=np.complex64)
+    S_bkwd = np.zeros((2, 2, d.size), dtype=np.complex64)
+    qsca = np.zeros(d.shape)
 
     #Loop over each diameter in the list and perform the T-matrix computation
     #using the wrapped fortran routine by Mischenko.  This gives us the
@@ -239,8 +239,8 @@ def tmatrix(m, d, lam, shape):
         if ds == 0.:
             continue
         qs,fmat,bmat = _tmat.tmatrix(ds/2.0,equal_volume,lam,m,eccen[i],np)
-        sigma_g = (N.pi / 4.0) * ds ** 2
-        qsca[i] = qs * (lam ** 2 / (2 * N.pi)) / sigma_g
+        sigma_g = (np.pi / 4.0) * ds ** 2
+        qsca[i] = qs * (lam ** 2 / (2 * np.pi)) / sigma_g
         S_frwd[...,i] = fmat
         S_bkwd[...,i] = bmat
 
@@ -256,14 +256,14 @@ def refractive_index0(material, wavelength, temp = 20.0):
     eps_real = eps_inf + (eps_s - eps_inf) / denom
     eps_imag = (eps_s - eps_inf) * lam_ratio / denom
 
-    return N.sqrt(eps_real + 1.0j * eps_imag)
+    return np.sqrt(eps_real + 1.0j * eps_imag)
 
 def water(temp):
     eps_s = 78.54*(1.0 - 4.579e-3 * (temp-25.0) + 1.19e-5 * (temp-25.0)**2 \
         - 2.8e-8 * (temp-25.0)**3)
     eps_inf = 5.27137 + 0.0216474*temp + 0.00131198*temp*temp
     alpha = -16.8129/(temp + 273) + 0.0609265
-    lam_s = 0.00033836 * N.exp(2513.98/(temp + 273))
+    lam_s = 0.00033836 * np.exp(2513.98/(temp + 273))
     sigma = 12.5664e8
     return eps_s, eps_inf, alpha, lam_s, sigma
 
@@ -271,8 +271,8 @@ def ice(temp):
     eps_s = 203.168 + 2.5 * temp + 0.15 * temp**2
     eps_inf = 3.168
     alpha = 0.288 + 0.0052 * temp + 0.00023 * temp**2
-    lam_s = 9.990288e-4 * N.exp(13200.0/(1.9869*(temp + 273)))
-    sigma = 1.26 * N.exp(-12500.0/(1.9869*(temp + 273)))
+    lam_s = 9.990288e-4 * np.exp(13200.0/(1.9869*(temp + 273)))
+    sigma = 1.26 * np.exp(-12500.0/(1.9869*(temp + 273)))
     return eps_s, eps_inf, alpha, lam_s, sigma
 
 #Used to lookup functions that specify parameters given the material
@@ -287,10 +287,10 @@ def ref_rs(wavelength, temp):
     LAMBDA_TEMP_INC = 10.0
     MAX_LAMBDA_INDEX = 4
 
-    delta_lambda_slope = N.array([-.00135,-.00071,-.001418,-.0000261,-.0000261])
-    delta_lambda_int = N.array([ .0359, .0224, .0153, .00112, .000859 ])
+    delta_lambda_slope=np.array([-.00135,-.00071,-.001418,-.0000261,-.0000261])
+    delta_lambda_int = np.array([ .0359, .0224, .0153, .00112, .000859 ])
 
-    lambda_index = N.floor(temp / LAMBDA_TEMP_INC)
+    lambda_index = np.floor(temp / LAMBDA_TEMP_INC)
     if lambda_index < 0:
         lambda_index = 0
     elif lambda_index > MAX_LAMBDA_INDEX:
@@ -307,7 +307,7 @@ def ref_rs(wavelength, temp):
     eps_real = (eps_0 - eps_inf) / eps_denom + eps_inf
     eps_imag = (eps_inf - eps_0) * lambda_ratio / eps_denom
 
-    return N.sqrt(eps_real - 1.0j*eps_imag)
+    return np.sqrt(eps_real - 1.0j*eps_imag)
 
 class scatterer(object):
     #All scattering matrices returned here are in the Forward Scattering
@@ -327,11 +327,11 @@ class scatterer(object):
             self.m = ref_index
         self.shape = shape
         if diameters == None:
-          self.diameters = N.linspace(0, .01, 100) # in meters
+          self.diameters = np.linspace(0, .01, 100) # in meters
         else:
           self.diameters = diameters
-        self.x = N.pi * self.diameters / self.wavelength
-        self.sigma_g = (N.pi / 4.0) * self.diameters ** 2
+        self.x = np.pi * self.diameters / self.wavelength
+        self.sigma_g = (np.pi / 4.0) * self.diameters ** 2
         self.model = 'None'
 
     def set_scattering_model(self, model):
@@ -351,11 +351,11 @@ class scatterer(object):
             self.sigma_s = qsca.reshape(self.diameters.shape) * self.sigma_g
             self.sigma_a = self.sigma_e - self.sigma_s
 
-            #Calculate back-scatter cross-section. Negative sign on S_bkwd[0,0]
+            #Calculate back-scatter cross-sectionp. Negative sign on S_bkwd[0,0]
             #accounts for negative in FSA
-            self.sigma_bh = 4 * N.pi * N.abs(-self.S_bkwd[0,0])**2
-            self.sigma_bv = 4 * N.pi * N.abs(self.S_bkwd[1,1])**2
-            self.sigma_bhv = 4 * N.pi * N.abs(-self.S_bkwd[0,1])**2
+            self.sigma_bh = 4 * np.pi * np.abs(-self.S_bkwd[0,0])**2
+            self.sigma_bv = 4 * np.pi * np.abs(self.S_bkwd[1,1])**2
+            self.sigma_bhv = 4 * np.pi * np.abs(-self.S_bkwd[0,1])**2
             self.sigma_b = self.sigma_bh
         except KeyError:
             msg = 'Invalid scattering model: %s\n' % model
@@ -377,7 +377,7 @@ class scatterer(object):
 
     def get_reflectivity_factor(self, dsd_weights, polar='h'):
         return (self.get_reflectivity(dsd_weights, polar=polar)
-            * self.wavelength**4 / (N.pi**5 * 0.93))
+            * self.wavelength**4 / (np.pi**5 * 0.93))
 
     def get_attenuation(self, dsd_weights, polar='h'):
         if polar == 'h':
@@ -417,10 +417,10 @@ if __name__ == '__main__':
     lam = .1
     print 'm for Water, %.1fcm, and 10 oC: %f'\
         % (lam / centi, refractive_index('water', lam, 10.0))
-    T = N.arange(-25.0,25.0,1.0)
+    T = np.arange(-25.0,25.0,1.0)
     m = refractive_index('water', lam, T)
     m_old = refractive_index0('water', lam, T)
-    m_rs = N.array([ref_rs(lam, temp) for temp in T])
+    m_rs = np.array([ref_rs(lam, temp) for temp in T])
 
     plt.subplot(2,2,1)
     plt.plot(T, m.real, T, m_old.real, T, m_rs.real)
