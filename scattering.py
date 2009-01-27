@@ -1,7 +1,6 @@
 #Various scattering functions
 import numpy as np
 import scipy.special as ss
-import scipy.integrate as si
 from scipy.constants import milli, centi
 import _tmatrix as _tmat
 
@@ -364,13 +363,13 @@ class scatterer(object):
 
     def get_reflectivity(self, dsd_weights, polar='h'):
         if polar == 'h':
-            return si.trapz(self.sigma_bh * dsd_weights, x=self.diameters,
+            return np.trapz(self.sigma_bh * dsd_weights, x=self.diameters,
                 axis=0)
         elif polar == 'v':
-            return si.trapz(self.sigma_bv * dsd_weights, x=self.diameters,
+            return np.trapz(self.sigma_bv * dsd_weights, x=self.diameters,
                 axis=0)
         elif polar in ('hv', 'vh'):
-            return si.trapz(self.sigma_bhv * dsd_weights, x=self.diameters,
+            return np.trapz(self.sigma_bhv * dsd_weights, x=self.diameters,
                 axis=0)
         else:
             raise ValueError('Invalid polarization specified: %s' % polar)
@@ -381,10 +380,10 @@ class scatterer(object):
 
     def get_attenuation(self, dsd_weights, polar='h'):
         if polar == 'h':
-            return si.trapz(self.sigma_eh * dsd_weights, x=self.diameters,
+            return np.trapz(self.sigma_eh * dsd_weights, x=self.diameters,
                 axis=0)
         else:
-            return si.trapz(self.sigma_ev * dsd_weights, x=self.diameters,
+            return np.trapz(self.sigma_ev * dsd_weights, x=self.diameters,
                 axis=0)
 
     def get_propagation_wavenumber(self, dsd_weights, polar='h'):
@@ -393,21 +392,21 @@ class scatterer(object):
         # attenuation, are two parts of the effective wavenumber, which is
         # used for the propagation of the electric field (amplitude)
         if polar == 'h':
-            return self.wavelength * si.trapz(
+            return self.wavelength * np.trapz(
                 self.S_frwd[0,0].real * dsd_weights, x=self.diameters, axis=0)
         else:
-            return self.wavelength * si.trapz(
+            return self.wavelength * np.trapz(
                 self.S_frwd[1,1].real * dsd_weights, x=self.diameters, axis=0)
 
     def get_backscatter_phase(self, dsd_weights, polar='h'):
         if polar == 'h':
-            return np.angle(si.trapz(-self.S_bkwd[0,0] * dsd_weights,
+            return np.angle(np.trapz(-self.S_bkwd[0,0] * dsd_weights,
                 x=self.diameters, axis=0))
         elif polar == 'v':
-            return np.angle(si.trapz(self.S_bkwd[1,1] * dsd_weights,
+            return np.angle(np.trapz(self.S_bkwd[1,1] * dsd_weights,
                 x=self.diameters, axis=0))
         elif polar in ('hv', 'vh'):
-            return np.angle(si.trapz(-self.S_bkwd[0,1] * dsd_weights,
+            return np.angle(np.trapz(-self.S_bkwd[0,1] * dsd_weights,
                 x=self.diameters, axis=0))
         else:
             raise ValueError('Invalid polarization specified: %s' % polar)
