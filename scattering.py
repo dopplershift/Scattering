@@ -71,7 +71,7 @@ def mie(m, d, lam, shape=None):
 ##            qb[i] = 0.0
         else:
             an,bn = _mie_abcd(m,x)
-            n = np.arange(1, anp.size + 1)
+            n = np.arange(1, an.size + 1)
             c = 2 * n + 1
             gn = (-1)**n
             x2 = x * x
@@ -210,17 +210,17 @@ def tmatrix(m, d, lam, shape):
 
     #Set up parameters that depend on what shape model we use for the scatterer
     if shape == 'sphere':
-        np = -1
+        shp_code = -1
         eccen = np.ones(d.shape)
-        eccenp.fill(1.00000001) #According to Mischenko, using 1.0 can overflow
+        eccen.fill(1.00000001) #According to Mischenko, using 1.0 can overflow
     elif shape == 'oblate':
-        np = -1
+        shp_code = -1
         eccen = 1. / raindrop_axis_ratios(d)
     elif shape == 'prolate':
         raise NotImplementedError
-        np = -1
+        shp_code = -1
     elif shape == 'raindrop':
-        np = -3
+        shp_code = -3
         eccen = np.ones(d.shape)
     else:
         raise NotImplementedError, 'Unimplemented shape: %s' % shape
@@ -237,7 +237,7 @@ def tmatrix(m, d, lam, shape):
     for i,ds in enumerate(d):
         if ds == 0.:
             continue
-        qs,fmat,bmat = _tmat.tmatrix(ds/2.0,equal_volume,lam,m,eccen[i],np)
+        qs,fmat,bmat =_tmat.tmatrix(ds/2.0,equal_volume,lam,m,eccen[i],shp_code)
         sigma_g = (np.pi / 4.0) * ds ** 2
         qsca[i] = qs * (lam ** 2 / (2 * np.pi)) / sigma_g
         S_frwd[...,i] = fmat
