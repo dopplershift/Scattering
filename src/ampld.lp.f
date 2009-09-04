@@ -504,11 +504,11 @@ C  AMPLITUDE MATRIX [Eqs. (2)-(4) of Ref. 6]
 !                 VV, VH, HV, HH since E-field is specified in
 ! (theta,phi) system, which equates to (v, h)
 !Due to "swizzle" components, put them into more familiar layout
-			SMAT_BKWD(1,1) = S22
-			SMAT_BKWD(1,2) = S21
-			SMAT_BKWD(2,1) = S12
-			SMAT_BKWD(2,2) = S11
-			
+         SMAT_BKWD(1,1) = S22
+         SMAT_BKWD(1,2) = S21
+         SMAT_BKWD(2,1) = S12
+         SMAT_BKWD(2,2) = S11
+
 C  FORWARD SCATTERING
 
       ALPHA=0D0
@@ -523,10 +523,10 @@ C  AMPLITUDE MATRIX [Eqs. (2)-(4) of Ref. 6]
 !                 VV, VH, HV, HH since E-field is specified in
 ! (theta,phi) system, which equates to (v, h)
 !Due to "swizzle" components, put them into more familiar layout
-			SMAT_FRWD(1,1) = S22
-			SMAT_FRWD(1,2) = S21
-			SMAT_FRWD(2,1) = S12
-			SMAT_FRWD(2,2) = S11
+         SMAT_FRWD(1,1) = S22
+         SMAT_FRWD(1,2) = S21
+         SMAT_FRWD(2,1) = S12
+         SMAT_FRWD(2,2) = S11
 
 C  PHASE MATRIX [Eqs. (13)-(29) of Ref. 6]
 !      Z11=0.5D0*(S11*DCONJG(S11)+S12*DCONJG(S12)
