@@ -28,10 +28,14 @@ def raindrop_axis_ratios(d):
     '''Calculates the axis ratio for an oblate spheroid approximating a raindrop
     given the (equi-volume) diameter of a spherical drop.  Diameter is in m.
     The original polynomial is documented in Brandes et al. (2002), but the
-    coefficients listed don't agree with the graph in Brandes et al. (2004).
-    The coefficients here yield the correct graph (and more sensible values)'''
+    coefficients listed don't agree with the graph in Brandes et al. (2004)
+    (or with the same coefficients listedi n Brandes et al. (2004). The change
+    here is to use 0.005303 (which is taken from lecture notes and assignments
+    from a class with G. Zhang, one of the papers' co-authors) instead of the
+    published value of 0.005030. The coefficients here yield the correct graph
+    (and more sensible values)'''
     d = d / milli
-    ab = 0.995 + d * (0.0251 + d * (-0.0364 + d * (0.005303 - 0.0002492 * d)))
+    ab = 0.9951 + d * (0.0251 + d * (-0.03644 + d * (0.005303 - 0.0002492 * d)))
     ab[d>8] = ab[d<=8].min()
     return ab
 
