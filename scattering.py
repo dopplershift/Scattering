@@ -4,8 +4,8 @@ import scipy.special as ss
 from scipy.constants import milli, centi
 import _tmatrix as _tmat
 
-__all__ = ['ice', 'mie', 'raindrop_axis_ratios', 'rayleigh', 'rayleigh_gans',
-    'refractive_index', 'scatterer', 'tmatrix', 'water']
+__all__ = ['scatterer', 'tmatrix', 'mie', 'rayleigh', 'rayleigh_gans',
+    'raindrop_axis_ratios', 'refractive_index', 'ice', 'water']
 
 def refractive_index(material, wavelength, temp = 20.0):
     '''Calculates the complex refractive index using an expand Debye formula.
