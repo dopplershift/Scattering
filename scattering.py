@@ -1,4 +1,8 @@
-#Various scattering functions
+'''
+This module contains several useful functions for doing electromagnetic
+scattering calculations for liquid water and ice. This code was developed
+to facilitate doing radar calculations.
+'''
 import numpy as np
 import scipy.special as ss
 from scipy.constants import milli, centi
@@ -7,10 +11,12 @@ import _tmatrix as _tmat
 __all__ = ['scatterer', 'tmatrix', 'mie', 'rayleigh', 'rayleigh_gans',
     'raindrop_axis_ratios', 'refractive_index', 'ice', 'water']
 
-def refractive_index(material, wavelength, temp = 20.0):
-    '''Calculates the complex refractive index using an expand Debye formula.
+def refractive_index(material, wavelength, temp=20.0):
+    '''
+    Calculates the complex refractive index using an expand Debye formula.
     The argument to the function gives another function which will return the
-    necessary constants.  Temperature is in Celsius, Wavelength in m'''
+    necessary constants.  Temperature is in Celsius, Wavelength in m.
+    '''
     (eps_s, eps_inf, alpha, lam_s, sigma) = _material_dict[material](temp)
     wavelength /= centi
     lam_ratio = (lam_s / wavelength) ** (1 - alpha)
@@ -24,7 +30,8 @@ def refractive_index(material, wavelength, temp = 20.0):
     return np.sqrt(eps_real + 1.0j * eps_imag)
 
 def raindrop_axis_ratios(d):
-    '''Calculates the axis ratio for an oblate spheroid approximating a raindrop
+    '''
+    Calculates the axis ratio for an oblate spheroid approximating a raindrop
     given the (equi-volume) diameter of a spherical drop.  Diameter is in m.
     The original polynomial is documented in Brandes et al. (2002), but the
     coefficients listed don't agree with the graph in Brandes et al. (2004)
@@ -32,14 +39,16 @@ def raindrop_axis_ratios(d):
     here is to use 0.005303 (which is taken from lecture notes and assignments
     from a class with G. Zhang, one of the papers' co-authors) instead of the
     published value of 0.005030. The coefficients here yield the correct graph
-    (and more sensible values)'''
+    (and more sensible values).
+    '''
     d = d / milli
     ab = 0.9951 + d * (0.0251 + d * (-0.03644 + d * (0.005303 - 0.0002492 * d)))
     ab[d>8] = ab[d<=8].min()
     return ab
 
 def mie(m, d, lam, shape=None):
-    '''Computation of Mie Efficiencies for given
+    '''
+    Computation of Mie Efficiencies for given
     complex refractive-index ratio m=m'+im"
     and diameter and wavelength (which should have the same units), using
     complex Mie Coefficients an and bn for n=1 to nmax, calculated using
