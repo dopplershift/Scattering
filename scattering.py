@@ -4,8 +4,8 @@ import scipy.special as ss
 from scipy.constants import milli, centi
 import _tmatrix as _tmat
 
-__all__ = ['ice', 'mie', 'raindrop_axis_ratios', 'rayleigh', 'rayleigh2',
-    'rayleigh_gans', 'refractive_index', 'scatterer', 'tmatrix', 'water']
+__all__ = ['ice', 'mie', 'raindrop_axis_ratios', 'rayleigh', 'rayleigh_gans',
+    'refractive_index', 'scatterer', 'tmatrix', 'water']
 
 def refractive_index(material, wavelength, temp = 20.0):
     '''Calculates the complex refractive index using an expand Debye formula.
@@ -135,15 +135,6 @@ def _mie_abcd(m, x):
 ##    cn = (j_x * h1_xp - h1_x * j_xp)/(j_mx * h1_xp - h1_x * j_mxp)
 ##    dn = m * (j_x * h1_xp - h1_x * j_xp)/(m2 * j_mx * h1_xp -h1_x * j_mxp)
     return an, bn
-
-def rayleigh2(m, d, lam, shape):
-    x = np.pi * d / lam
-    Kw = (m**2 - 1.0)/(m**2 + 2.0)
-    qb = 4.0 * abs(Kw)**2 * x ** 4
-    qsca = (2.0/3.0) * qb
-    qabs = 4.0 * Kw.imag * x
-    qext = qsca + qabs
-    return qext, qsca, qabs
 
 def rayleigh(m, d, lam, shape):
     empty = np.zeros(d.shape, dtype=np.complex64)
