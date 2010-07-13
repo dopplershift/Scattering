@@ -5,8 +5,7 @@ from scipy.constants import milli, centi
 import _tmatrix as _tmat
 
 __all__ = ['ice', 'mie', 'raindrop_axis_ratios', 'rayleigh', 'rayleigh2',
-    'rayleigh_gans', 'ref_rs', 'refractive_index', 'refractive_index0',
-    'scatterer', 'tmatrix', 'water']
+    'rayleigh_gans', 'refractive_index', 'scatterer', 'tmatrix', 'water']
 
 def refractive_index(material, wavelength, temp = 20.0):
     '''Calculates the complex refractive index using an expand Debye formula.
@@ -249,18 +248,6 @@ def tmatrix(m, d, lam, shape):
 
     return S_frwd, S_bkwd, qsca
 
-def refractive_index0(material, wavelength, temp = 20.0):
-    material_dict = dict(water=water, ice=ice)
-    (eps_s, eps_inf, alpha, lam_s, sigma) = material_dict[material](temp)
-    wavelength /= centi
-
-    lam_ratio = lam_s / wavelength
-    denom = 1 + lam_ratio * lam_ratio
-    eps_real = eps_inf + (eps_s - eps_inf) / denom
-    eps_imag = (eps_s - eps_inf) * lam_ratio / denom
-
-    return np.sqrt(eps_real + 1.0j * eps_imag)
-
 def water(temp):
     eps_s = 78.54*(1.0 - 4.579e-3 * (temp-25.0) + 1.19e-5 * (temp-25.0)**2 \
         - 2.8e-8 * (temp-25.0)**3)
@@ -280,37 +267,6 @@ def ice(temp):
 
 #Used to lookup functions that specify parameters given the material
 _material_dict = dict(water=water, ice=ice)
-
-def ref_rs(wavelength, temp):
-    eps_inf = 5.5
-    eps_0_slope = -0.3759468439
-    eps_0_int = 190.4835017
-
-    C_TO_KELVIN = 273.15
-    LAMBDA_TEMP_INC = 10.0
-    MAX_LAMBDA_INDEX = 4
-
-    delta_lambda_slope=np.array([-.00135,-.00071,-.001418,-.0000261,-.0000261])
-    delta_lambda_int = np.array([ .0359, .0224, .0153, .00112, .000859 ])
-
-    lambda_index = np.floor(temp / LAMBDA_TEMP_INC)
-    if lambda_index < 0:
-        lambda_index = 0
-    elif lambda_index > MAX_LAMBDA_INDEX:
-        lambda_index = MAX_LAMBDA_INDEX
-
-    delta_lambda = delta_lambda_slope[lambda_index]\
-        * (temp - lambda_index * LAMBDA_TEMP_INC)\
-        + delta_lambda_int[lambda_index]
-
-    eps_0 = eps_0_slope * (temp + C_TO_KELVIN) + eps_0_int
-
-    lambda_ratio = delta_lambda / wavelength
-    eps_denom = 1 + lambda_ratio * lambda_ratio
-    eps_real = (eps_0 - eps_inf) / eps_denom + eps_inf
-    eps_imag = (eps_inf - eps_0) * lambda_ratio / eps_denom
-
-    return np.sqrt(eps_real - 1.0j*eps_imag)
 
 class scatterer(object):
     #All scattering matrices returned here are in the Forward Scattering
