@@ -161,10 +161,10 @@ def rayleigh_gans(m, d, lam, shape):
         lz = ((1 + f2) / f2) * (1 - (1. / f) * np.arctan(f))
     elif shape == 'prolate':
         #TODO: Need to finish this
-        raise NotImplementedError
+        raise NotImplementedError('Prolate not implemented. Yet.')
         lz = (1 - e2) / e2 * (np.log((1 + e) / (1 - e)) / (2 * e)  - 1)
     else:
-        raise NotImplementedError, 'Unimplemented shape: %s' % shape
+        raise NotImplementedError('Unimplemented shape: %s' % shape)
 
     #Calculate the constants outside of the matrix
     eps_r = m**2
@@ -240,6 +240,10 @@ def tmatrix(m, d, lam, shape):
     return S_frwd, S_bkwd, qsca
 
 def water(temp):
+    '''
+    Calculate various parameters for the calculation of the dielectric constant
+    of liquid water using the extended Debye formula. Temp is in Celsius.
+    '''
     eps_s = 78.54*(1.0 - 4.579e-3 * (temp-25.0) + 1.19e-5 * (temp-25.0)**2 \
         - 2.8e-8 * (temp-25.0)**3)
     eps_inf = 5.27137 + 0.0216474*temp + 0.00131198*temp*temp
@@ -249,6 +253,10 @@ def water(temp):
     return eps_s, eps_inf, alpha, lam_s, sigma
 
 def ice(temp):
+    '''
+    Calculate various parameters for the calculation of the dielectric constant
+    of ice using the extended Debye formula. Temp is in Celsius.
+    '''
     eps_s = 203.168 + 2.5 * temp + 0.15 * temp**2
     eps_inf = 3.168
     alpha = 0.288 + 0.0052 * temp + 0.00023 * temp**2
