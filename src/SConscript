@@ -1,9 +1,0 @@
-#from numscons import GetNumpyEnvironment
-
-#env = GetNumpyEnvironment(ARGUMENTS)
-
-env = GetDefaultEnvironment()
-
-env.Append(CFLAGS="-W -Wall -std=c99 -march=opteron -O3 -fstrict-aliasing")
-
-env.NumpyCtypes('_tmatrix', source=Glob('*.f *.pyf'))
