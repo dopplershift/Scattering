@@ -3,7 +3,7 @@ This module contains several useful functions for doing electromagnetic
 scattering calculations for liquid water and ice. This code was developed
 to facilitate doing radar calculations.
 
-The main utility here is the Scattering class, which calls several different
+The main utility here is the scatterer class, which calls several different
 scattering functions (tmatrix, mie, raylegh, rayleigh_gans) through a common
 interface. These functions can still be used to calculate scattering
 parameters by hand.  Also, there is are functions for calculating the
@@ -35,6 +35,34 @@ def refractive_index(material, wavelength, temp=20.0):
         / denom) + sigma * wavelength / 18.8496e10
 
     return np.sqrt(eps_real + 1.0j * eps_imag)
+
+def water(temp):
+    '''
+    Calculate various parameters for the calculation of the dielectric constant
+    of liquid water using the extended Debye formula. Temp is in Celsius.
+    '''
+    eps_s = 78.54*(1.0 - 4.579e-3 * (temp-25.0) + 1.19e-5 * (temp-25.0)**2 \
+        - 2.8e-8 * (temp-25.0)**3)
+    eps_inf = 5.27137 + 0.0216474*temp + 0.00131198*temp*temp
+    alpha = -16.8129/(temp + 273) + 0.0609265
+    lam_s = 0.00033836 * np.exp(2513.98/(temp + 273))
+    sigma = 12.5664e8
+    return eps_s, eps_inf, alpha, lam_s, sigma
+
+def ice(temp):
+    '''
+    Calculate various parameters for the calculation of the dielectric constant
+    of ice using the extended Debye formula. Temp is in Celsius.
+    '''
+    eps_s = 203.168 + 2.5 * temp + 0.15 * temp**2
+    eps_inf = 3.168
+    alpha = 0.288 + 0.0052 * temp + 0.00023 * temp**2
+    lam_s = 9.990288e-4 * np.exp(13200.0/(1.9869*(temp + 273)))
+    sigma = 1.26 * np.exp(-12500.0/(1.9869*(temp + 273)))
+    return eps_s, eps_inf, alpha, lam_s, sigma
+
+# Used to lookup functions that specify parameters given the material
+_material_dict = dict(water=water, ice=ice)
 
 def raindrop_axis_ratios(d):
     '''
@@ -255,34 +283,6 @@ def tmatrix(m, d, lam, shape):
         S_bkwd[...,i] = bmat
 
     return S_frwd, S_bkwd, qsca
-
-def water(temp):
-    '''
-    Calculate various parameters for the calculation of the dielectric constant
-    of liquid water using the extended Debye formula. Temp is in Celsius.
-    '''
-    eps_s = 78.54*(1.0 - 4.579e-3 * (temp-25.0) + 1.19e-5 * (temp-25.0)**2 \
-        - 2.8e-8 * (temp-25.0)**3)
-    eps_inf = 5.27137 + 0.0216474*temp + 0.00131198*temp*temp
-    alpha = -16.8129/(temp + 273) + 0.0609265
-    lam_s = 0.00033836 * np.exp(2513.98/(temp + 273))
-    sigma = 12.5664e8
-    return eps_s, eps_inf, alpha, lam_s, sigma
-
-def ice(temp):
-    '''
-    Calculate various parameters for the calculation of the dielectric constant
-    of ice using the extended Debye formula. Temp is in Celsius.
-    '''
-    eps_s = 203.168 + 2.5 * temp + 0.15 * temp**2
-    eps_inf = 3.168
-    alpha = 0.288 + 0.0052 * temp + 0.00023 * temp**2
-    lam_s = 9.990288e-4 * np.exp(13200.0/(1.9869*(temp + 273)))
-    sigma = 1.26 * np.exp(-12500.0/(1.9869*(temp + 273)))
-    return eps_s, eps_inf, alpha, lam_s, sigma
-
-# Used to lookup functions that specify parameters given the material
-_material_dict = dict(water=water, ice=ice)
 
 class scatterer(object):
     # All scattering matrices returned here are in the Forward Scattering
