@@ -284,6 +284,34 @@ class scatterer(object):
 
     def __init__(self, wavelength, temperature, type='water', shape='sphere',
       diameters=None, ref_index=None):
+        '''
+        Construct a scatterer for *wavelength* and *temperature*.
+
+        Required arguments:
+            wavelength : Wavelength for the incident radiation in meters.
+
+            temperature : Temperature for scattering, used to calculate the
+                index of refraction. Given in degrees C.
+
+        Optional arguments:
+            type : Type of scatterer, either 'water' or 'ice'.
+                Default is 'water'.
+
+            shape : Shape of the scatterer. One of:
+                ('sphere', 'oblate', 'prolate', 'raindrop'). These represent
+                the assumed drop shape. Oblate uses the relationship of
+                Brandes et al. (2002). Raindrop uses a distorted ellipsoid
+                shape as given by Beard and Chuang 1987. Defaults to sphere.
+
+            diameters : Array (or scalar) of volume equivalent diameters to
+                use to calculate scattering, in meters. Defaults to an array
+                of 100 diameters linearly spaced between 0 and 0.01 meters.
+
+            ref_index : Used to give an explicit assumed value for the
+                refractive index. If none is given, the coeficients of
+                Ray (1972) are used to calculate the dielectric constant
+                of water or ice, given the *temperature*.
+        '''
         self.wavelength = wavelength
         self.temperature = temperature
         self.type = type
@@ -302,6 +330,11 @@ class scatterer(object):
         self.model = 'None'
 
     def set_scattering_model(self, model):
+        '''
+        Actually performs the scattering calculation, using the scattering model
+        given by *model*, which is one of:
+            ('tmatrix', 'mie', 'gans', 'rayleigh')
+        '''
         try:
             fmat, bmat, qsca = scatterer.type_map[model](self.m, self.diameters,
                 self.wavelength, shape=self.shape)
@@ -330,6 +363,12 @@ class scatterer(object):
             raise ValueError(msg)
 
     def get_reflectivity(self, dsd_weights, polar='h'):
+        '''
+        Calculates the reflectivity, in m^-1, given the drop size
+        distribution, which should be in units of # m^-4. Polar is used
+        to specifiy the polarization assumed, which can be 'h' for horizontal,
+        'v' for vertical, or 'vh' or 'hv' for cross-polarization calculation.
+        '''
         if polar == 'h':
             return np.trapz(self.sigma_bh * dsd_weights, x=self.diameters,
                 axis=0)
@@ -343,10 +382,22 @@ class scatterer(object):
             raise ValueError('Invalid polarization specified: %s' % polar)
 
     def get_reflectivity_factor(self, dsd_weights, polar='h'):
+        '''
+        Calculates the reflectivity factor, in m^3, given the drop size
+        distribution, which should be in units of # m^-4. Polar is used
+        to specifiy the polarization assumed, which can be 'h' for horizontal,
+        'v' for vertical, or 'vh' or 'hv' for cross-polarization calculation.
+        '''
         return (self.get_reflectivity(dsd_weights, polar=polar)
             * self.wavelength**4 / (np.pi**5 * 0.93))
 
     def get_attenuation(self, dsd_weights, polar='h'):
+        '''
+        Calculates the attenuation factor, in m^-1, given the drop size
+        distribution, which should be in units of # m^-4. Polar is used
+        to specifiy the polarization assumed, which can be 'h' for horizontal or
+        'v' for vertical.
+        '''
         if polar == 'h':
             return np.trapz(self.sigma_eh * dsd_weights, x=self.diameters,
                 axis=0)
@@ -355,6 +406,12 @@ class scatterer(object):
                 axis=0)
 
     def get_propagation_wavenumber(self, dsd_weights, polar='h'):
+        '''
+        Calculates the effective propagation wavenumber, in m^-1, given the
+        drop size distribution, which should be in units of # m^-4. Polar is
+        used to specifiy the polarization assumed, which can be 'h' for
+        horizontal or 'v' for vertical.
+        '''
         # Phase doesn't multiply by a factor of two, unlike attenuation,
         # because attenuation represents a decrease in power.  Phase and
         # attenuation, are two parts of the effective wavenumber, which is
@@ -367,6 +424,13 @@ class scatterer(object):
                 self.S_frwd[1,1].real * dsd_weights, x=self.diameters, axis=0)
 
     def get_backscatter_phase(self, dsd_weights, polar='h'):
+        '''
+        Calculates the backscatter phase shift, in radians, given the
+        drop size distribution, which should be in units of # m^-4. Polar is
+        used to specifiy the polarization assumed, which can be 'h' for
+        horizontal,'v' for vertical, or 'vh' or 'hv' for cross-polarization
+        calculation.
+        '''
         if polar == 'h':
             return np.angle(np.trapz(-self.S_bkwd[0,0] * dsd_weights,
                 x=self.diameters, axis=0))
