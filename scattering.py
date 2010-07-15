@@ -63,7 +63,7 @@ def mie(m, d, lam, shape=None):
     if(m.imag < 0):
         m = np.conj(m)
 
-    #Want to make sure we can accept single arguments or arrays
+    # Want to make sure we can accept single arguments or arrays
     try:
         xs.size
         xlist = xs
@@ -133,7 +133,7 @@ def _mie_abcd(m, x):
     j_mx = j_mx[1:]
     jd_mx = jd_mx[1:]
 
-    #Get primes (d/dx [x*f(x)]) using derivative product rule
+    # Get primes (d/dx [x*f(x)]) using derivative product rule
     j_xp = j_x + x*jd_x
     j_mxp = j_mx + mx*jd_mx
     h1_xp = h1_x + x*h1d_x
@@ -152,15 +152,16 @@ def rayleigh(m, d, lam, shape):
     qsca = (32.0/3.0) * (np.abs(S)/d)**2
     qabs = 4.0 * Kw.imag * np.pi * d / lam
     qext = qsca + qabs
-    #Hack here so that extinction cross section can be correctly retrieved from
-    #the forward scattering matrix
+
+    # Hack here so that extinction cross section can be correctly retrieved from
+    # the forward scattering matrix
     S_frwd = S.real + 1.0j * qext * np.pi * d**2 / (8.0 * lam)
     fmat = np.array([[S_frwd, empty], [empty, S_frwd]])
     bmat = np.array([[-S, empty], [empty, S]])
     return fmat, bmat, qsca
 
 def rayleigh_gans(m, d, lam, shape):
-    #Get the lambda_z parameter that is a function of the shape of the drop
+    # Get the lambda_z parameter that is a function of the shape of the drop
     if shape == 'sphere':
         lz = 1./3. * np.ones(d.shape)
     elif shape == 'oblate':
@@ -169,13 +170,13 @@ def rayleigh_gans(m, d, lam, shape):
         f = np.sqrt(f2)
         lz = ((1 + f2) / f2) * (1 - (1. / f) * np.arctan(f))
     elif shape == 'prolate':
-        #TODO: Need to finish this
+        # TODO: Need to finish this
         raise NotImplementedError('Prolate not implemented. Yet.')
         lz = (1 - e2) / e2 * (np.log((1 + e) / (1 - e)) / (2 * e)  - 1)
     else:
         raise NotImplementedError('Unimplemented shape: %s' % shape)
 
-    #Calculate the constants outside of the matrix
+    # Calculate the constants outside of the matrix
     eps_r = m**2
     empty = np.zeros(d.shape, dtype=np.complex64)
     l = (1 - lz) / 2.
@@ -183,22 +184,22 @@ def rayleigh_gans(m, d, lam, shape):
     polar_h = 1. / ((eps_r - 1) * l + 1)
     polar_v = 1. / ((eps_r - 1) * lz + 1)
 
-    #Calculate a scattering efficiency using the rayleigh approximation
+    # Calculate a scattering efficiency using the rayleigh approximation
     qsca_h = (32.0/3.0) * (np.abs(Sfact * polar_h) / d)**2
     qabs_h = (4./3.) * np.imag((eps_r - 1) * polar_h) * np.pi * d / lam
     qext_h = qsca_h + qabs_h
 
-    #Calculate a scattering efficiency using the rayleigh approximation
+    # Calculate a scattering efficiency using the rayleigh approximation
     qsca_v = (32.0/3.0) * (np.abs(Sfact * polar_v) / d)**2
     qabs_v = (4./3.) * np.imag((eps_r - 1) * polar_v) * np.pi * d / lam
     qext_v = qsca_v + qabs_v
 
-    #Get the forward and backward scattering matrices
+    # Get the forward and backward scattering matrices
     fmat = Sfact * np.array([[polar_h, empty],
                             [empty, polar_v]], dtype=np.complex64)
 
-    #Hack here so that extinction cross section can be correctly retrieved from
-    #the forward scattering matrix
+    # Hack here so that extinction cross section can be correctly retrieved from
+    # the forward scattering matrix
     fmat[0,0].imag = qext_h * np.pi * d**2 / (8.0 * lam)
     fmat[1,1].imag = qext_v * np.pi * d**2 / (8.0 * lam)
 
@@ -211,11 +212,11 @@ def tmatrix(m, d, lam, shape):
     equal_volume = 1.0
     d = np.atleast_1d(d)
 
-    #Set up parameters that depend on what shape model we use for the scatterer
+    # Set up parameters that depend on what shape model we use for the scatterer
     if shape == 'sphere':
         shp_code = -1
         eccen = np.ones(d.shape)
-        eccen.fill(1.00000001) #According to Mischenko, using 1.0 can overflow
+        eccen.fill(1.00000001) # According to Mischenko, using 1.0 can overflow
     elif shape == 'oblate':
         shp_code = -1
         eccen = 1. / raindrop_axis_ratios(d)
@@ -228,15 +229,15 @@ def tmatrix(m, d, lam, shape):
     else:
         raise NotImplementedError, 'Unimplemented shape: %s' % shape
 
-    #Initialize arrays
+    # Initialize arrays
     S_frwd = np.zeros((2, 2, d.size), dtype=np.complex64)
     S_bkwd = np.zeros((2, 2, d.size), dtype=np.complex64)
     qsca = np.zeros(d.shape)
 
-    #Loop over each diameter in the list and perform the T-matrix computation
-    #using the wrapped fortran routine by Mischenko.  This gives us the
-    #forward and backward scattering matrices, as well as the scattering
-    #efficiency
+    # Loop over each diameter in the list and perform the T-matrix computation
+    # using the wrapped fortran routine by Mischenko.  This gives us the
+    # forward and backward scattering matrices, as well as the scattering
+    # efficiency
     for i,ds in enumerate(d):
         if ds == 0.:
             continue
@@ -273,12 +274,12 @@ def ice(temp):
     sigma = 1.26 * np.exp(-12500.0/(1.9869*(temp + 273)))
     return eps_s, eps_inf, alpha, lam_s, sigma
 
-#Used to lookup functions that specify parameters given the material
+# Used to lookup functions that specify parameters given the material
 _material_dict = dict(water=water, ice=ice)
 
 class scatterer(object):
-    #All scattering matrices returned here are in the Forward Scattering
-    #Aligned (FSA) convention
+    # All scattering matrices returned here are in the Forward Scattering
+    # Aligned (FSA) convention
     type_map = dict(mie=mie, rayleigh=rayleigh, gans=rayleigh_gans,
       tmatrix=tmatrix)
 
@@ -343,7 +344,7 @@ class scatterer(object):
             self.S_frwd = fmat.reshape((2,2) + self.diameters.shape)
             self.S_bkwd = bmat.reshape((2,2) + self.diameters.shape)
 
-            #Calculate extinction cross-section
+            # Calculate extinction cross-section
             self.sigma_eh = 2 * self.wavelength * self.S_frwd[0,0].imag
             self.sigma_ev = 2 * self.wavelength * self.S_frwd[1,1].imag
             self.sigma_e = self.sigma_eh
@@ -351,8 +352,8 @@ class scatterer(object):
             self.sigma_s = qsca.reshape(self.diameters.shape) * self.sigma_g
             self.sigma_a = self.sigma_e - self.sigma_s
 
-            #Calculate back-scatter cross-sectionp. Negative sign on S_bkwd[0,0]
-            #accounts for negative in FSA
+            # Calculate back-scatter cross-sectionp. Negative sign on
+            # S_bkwd[0,0] accounts for negative in FSA
             self.sigma_bh = 4 * np.pi * np.abs(-self.S_bkwd[0,0])**2
             self.sigma_bv = 4 * np.pi * np.abs(self.S_bkwd[1,1])**2
             self.sigma_bhv = 4 * np.pi * np.abs(-self.S_bkwd[0,1])**2
