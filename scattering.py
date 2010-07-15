@@ -2,6 +2,13 @@
 This module contains several useful functions for doing electromagnetic
 scattering calculations for liquid water and ice. This code was developed
 to facilitate doing radar calculations.
+
+The main utility here is the Scattering class, which calls several different
+scattering functions (tmatrix, mie, raylegh, rayleigh_gans) through a common
+interface. These functions can still be used to calculate scattering
+parameters by hand.  Also, there is are functions for calculating the
+index of refraction for water or ice, as well as calculating the axis ratio
+for water-ellipsoids, using an empirical fit of Brandes et al. (2002).
 '''
 import numpy as np
 import scipy.special as ss
