@@ -450,3 +450,21 @@ class scatterer(object):
                 x=self.diameters, axis=0))
         else:
             raise ValueError('Invalid polarization specified: %s' % polar)
+
+    def get_copolar_cross_correlation(self, dsd_weights):
+        '''
+        Calculates the magnitude of the copolar cross-correlation coefficient,
+        in radians, given the drop size distribution, which should be in
+        units of # m^-4.
+        '''
+        # Using a double here forces accumulation of results in double,
+        # which is necessary to get accurate integration (giving a high of
+        # 1.000000 instead of 1.000[NOISE].
+        d_double = self.diameters.astype(np.float64)
+        HH = np.trapz(np.abs(self.S_bkwd[0,0])**2 * dsd_weights,
+            x=d_double, axis=0)
+        VV = np.trapz(np.abs(self.S_bkwd[1,1])**2 * dsd_weights,
+            x=d_double, axis=0)
+        HV = np.trapz(self.S_bkwd[0,0] * self.S_bkwd[1,1].conj() * dsd_weights,
+            x=d_double, axis=0)
+        return np.abs(HV)/np.sqrt(HH * VV)
