@@ -279,8 +279,11 @@ def tmatrix(m, d, lam, shape):
         qs,fmat,bmat =_tmat.tmatrix(ds/2.0,equal_volume,lam,m,eccen[i],shp_code)
         sigma_g = (np.pi / 4.0) * ds ** 2
         qsca[i] = qs * (lam ** 2 / (2 * np.pi)) / sigma_g
-        S_frwd[...,i] = fmat
-        S_bkwd[...,i] = bmat
+
+        # The returned arrays have values for a variety of canting angles.
+        # We just use the values for 0 canting angle.
+        S_frwd[...,i] = fmat[...,0]
+        S_bkwd[...,i] = bmat[...,0]
 
     return S_frwd, S_bkwd, qsca
 
@@ -359,7 +362,7 @@ class scatterer(object):
             self.sigma_s = qsca.reshape(self.diameters.shape) * self.sigma_g
             self.sigma_a = self.sigma_e - self.sigma_s
 
-            # Calculate back-scatter cross-sectionp. Negative sign on
+            # Calculate back-scatter cross-section. Negative sign on
             # S_bkwd[0,0] accounts for negative in FSA
             self.sigma_bh = 4 * np.pi * np.abs(-self.S_bkwd[0,0])**2
             self.sigma_bv = 4 * np.pi * np.abs(self.S_bkwd[1,1])**2

@@ -13,8 +13,8 @@ python module _tmatrix ! in
             real*8 intent(in) :: ddelt=0.001
             integer intent(in) :: ndgs=2
             real*8 intent(out) :: qsca
-            complex*16 intent(out) :: smat_frwd(2,2)
-            complex*16 intent(out) :: smat_bkwd(2,2)
+            complex*16 intent(out) :: smat_frwd(2,2,90)
+            complex*16 intent(out) :: smat_bkwd(2,2,90)
         end subroutine tmatrix
     end interface 
 end python module tmatrix

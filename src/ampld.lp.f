@@ -253,8 +253,8 @@ C   VALUES FOR WHICH RESULTS ARE COMPUTED ACCURATELY. FOR THIS REASON,
 C   THE AUTHORS AND THEIR ORGANIZATION DISCLAIM ALL LIABILITY FOR
 C   ANY DAMAGES THAT MAY RESULT FROM THE USE OF THE PROGRAM.
 
-      SUBROUTINE TMATRIX (AXI,RAT,LAM,MR,EPS,NP,DDELT,NDGS,QSCA,
-     &                    SMAT_FRWD,SMAT_BKWD)
+      SUBROUTINE TMATRIX (AXI,RAT,LAM,MR,EPS,NP,DDELT,NDGS,
+     &                    QSCA,SMAT_FRWD,SMAT_BKWD)
       IMPLICIT REAL*8 (A-H,O-Z)
       INCLUDE 'ampld.par.f'
       REAL*8  LAM,MRR,MRI,X(NPNG2),W(NPNG2),S(NPNG2),SS(NPNG2),
@@ -269,7 +269,7 @@ C   ANY DAMAGES THAT MAY RESULT FROM THE USE OF THE PROGRAM.
      &     IT21(NPN6,NPN4,NPN4),IT22(NPN6,NPN4,NPN4)
       COMPLEX*16 S11,S12,S21,S22
       COMPLEX*16 MR
-      COMPLEX*16 SMAT_FRWD(2,2),SMAT_BKWD(2,2)
+      COMPLEX*16 SMAT_FRWD(2,2,90),SMAT_BKWD(2,2,90)
 
       COMMON /CT/ TR1,TI1
       COMMON /TMAT/ RT11,RT12,RT21,RT22,IT11,IT12,IT21,IT22
@@ -296,6 +296,8 @@ C       NDGS=2
       MRI = DIMAG(MR)
 !       PRINT 8001, MRI
 !  8001 FORMAT ('MRI=',F10.6)
+!      PRINT 8001, ALPHA, BETA
+! 8001 FORMAT ('ALPHA=', F10.6, 'BETA=', F10.6)
       P=DACOS(-1D0)
       NCHECK=0
       IF (NP.EQ.-1.OR.NP.EQ.-2) NCHECK=1
@@ -492,8 +494,17 @@ C  COMPUTATION OF THE AMPLITUDE AND PHASE MATRICES
 
 C  BACK-SCATTERING
 
-      ALPHA=0D0
-      BETA=0D0
+
+! ALPHA gives the rotation around the axis of symmmetry and BETA gives the
+! rotation around the newly-rotated y-axis. With an ALPHA of 0, the y-axis
+! points to the right of the propagation direction (with the current theta/phi)
+! so an ALPHA of 90 allows BETA to give a left/right canting angle.
+! We loop over a variety of BETA values here since it's quicker without
+! recalculating the Tmatrix. The calling code can do the appropriate integral.
+
+      ALPHA=90D0
+      DO 230 N=1,90
+      BETA=1D0 * (N - 1)
       THET0=90D0
       THET=90D0
       PHI0=0D0
@@ -504,15 +515,15 @@ C  AMPLITUDE MATRIX [Eqs. (2)-(4) of Ref. 6]
 !                 VV, VH, HV, HH since E-field is specified in
 ! (theta,phi) system, which equates to (v, h)
 !Due to "swizzle" components, put them into more familiar layout
-         SMAT_BKWD(1,1) = S22
-         SMAT_BKWD(1,2) = S21
-         SMAT_BKWD(2,1) = S12
-         SMAT_BKWD(2,2) = S11
+         SMAT_BKWD(1,1,N) = S22
+         SMAT_BKWD(1,2,N) = S21
+         SMAT_BKWD(2,1,N) = S12
+         SMAT_BKWD(2,2,N) = S11
 
 C  FORWARD SCATTERING
 
-      ALPHA=0D0
-      BETA=0D0
+!      ALPHA=0D0
+!      BETA=0D0
       THET0=90D0
       THET=90D0
       PHI0=0D0
@@ -523,11 +534,11 @@ C  AMPLITUDE MATRIX [Eqs. (2)-(4) of Ref. 6]
 !                 VV, VH, HV, HH since E-field is specified in
 ! (theta,phi) system, which equates to (v, h)
 !Due to "swizzle" components, put them into more familiar layout
-         SMAT_FRWD(1,1) = S22
-         SMAT_FRWD(1,2) = S21
-         SMAT_FRWD(2,1) = S12
-         SMAT_FRWD(2,2) = S11
-
+         SMAT_FRWD(1,1,N) = S22
+         SMAT_FRWD(1,2,N) = S21
+         SMAT_FRWD(2,1,N) = S12
+         SMAT_FRWD(2,2,N) = S11
+  230 CONTINUE
 C  PHASE MATRIX [Eqs. (13)-(29) of Ref. 6]
 !      Z11=0.5D0*(S11*DCONJG(S11)+S12*DCONJG(S12)
 !     &          +S21*DCONJG(S21)+S22*DCONJG(S22))
