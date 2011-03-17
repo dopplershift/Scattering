@@ -81,7 +81,7 @@ def raindrop_axis_ratios(d):
     ab[d>8] = ab[d<=8].min()
     return ab
 
-def mie(m, d, lam, shape=None):
+def mie(m, d, lam, *args):
     '''
     Computation of Mie Efficiencies for given
     complex refractive-index ratio m=m'+im"
@@ -180,7 +180,7 @@ def _mie_abcd(m, x):
 ##    dn = m * (j_x * h1_xp - h1_x * j_xp)/(m2 * j_mx * h1_xp -h1_x * j_mxp)
     return an, bn
 
-def rayleigh(m, d, lam, shape):
+def rayleigh(m, d, lam, *args):
     empty = np.zeros(d.shape, dtype=np.complex64)
     Kw = (m**2 - 1.0)/(m**2 + 2.0)
     S = Kw * np.pi**2 / (2 * lam**2) * d**3
@@ -193,9 +193,9 @@ def rayleigh(m, d, lam, shape):
     S_frwd = S.real + 1.0j * qext * np.pi * d**2 / (8.0 * lam)
     fmat = np.array([[S_frwd, empty], [empty, S_frwd]])
     bmat = np.array([[-S, empty], [empty, S]])
-    return fmat, bmat, qsca
+    return fmat.squeeze(), bmat.squeeze(), qsca
 
-def rayleigh_gans(m, d, lam, shape):
+def rayleigh_gans(m, d, lam, shape, *args):
     # Get the lambda_z parameter that is a function of the shape of the drop
     if shape == 'sphere':
         lz = 1./3. * np.ones(d.shape)
@@ -241,9 +241,10 @@ def rayleigh_gans(m, d, lam, shape):
     bmat = Sfact * np.array([[-polar_h, empty],
                             [empty, polar_v]], dtype=np.complex64)
 
-    return fmat, bmat, qsca_h
+    return fmat.squeeze(), bmat.squeeze(), qsca_h
 
-def tmatrix(m, d, lam, shape):
+TMATRIX_ANGLES = 90
+def tmatrix(m, d, lam, shape, ang_width):
     equal_volume = 1.0
     d = np.atleast_1d(d)
 
@@ -264,9 +265,9 @@ def tmatrix(m, d, lam, shape):
     else:
         raise NotImplementedError, 'Unimplemented shape: %s' % shape
 
-    # Initialize arrays
-    S_frwd = np.zeros((2, 2, d.size), dtype=np.complex64)
-    S_bkwd = np.zeros((2, 2, d.size), dtype=np.complex64)
+    # Initialize arrays -- assumes Tmatrix calculates at TMATRIX_ANGLES angles
+    S_frwd = np.zeros((2, 2, TMATRIX_ANGLES, d.size), dtype=np.complex64)
+    S_bkwd = np.zeros((2, 2, TMATRIX_ANGLES, d.size), dtype=np.complex64)
     qsca = np.zeros(d.shape)
 
     # Loop over each diameter in the list and perform the T-matrix computation
@@ -282,8 +283,15 @@ def tmatrix(m, d, lam, shape):
 
         # The returned arrays have values for a variety of canting angles.
         # We just use the values for 0 canting angle.
-        S_frwd[...,i] = fmat[...,0]
-        S_bkwd[...,i] = bmat[...,0]
+        S_frwd[...,i] = fmat[...]
+        S_bkwd[...,i] = bmat[...]
+
+    # If the angle width is not > 0, we're not using angular averaging. Remove
+    # the calculations for angles other than 0 so that we don't waste time
+    # doing calculations at other angles.
+    if not ang_width > 0.:
+        S_frwd = S_frwd[:,:,0,:]
+        S_bkwd = S_bkwd[:,:,0,:]
 
     return S_frwd, S_bkwd, qsca
 
@@ -292,6 +300,37 @@ class scatterer(object):
     # Aligned (FSA) convention
     type_map = dict(mie=mie, rayleigh=rayleigh, gans=rayleigh_gans,
       tmatrix=tmatrix)
+
+    def get_angle_width(self):
+        return self._angle_width
+
+    def set_angle_width(self, width):
+        # Calculates the normalizing coefficient for the distribution. From
+        # Bringi & Chandrasekar 2001, pg. 68 (which cite Mardia 1972) for an
+        # axial distribution.
+        self._angle_width = width
+        if width <= 0.:
+            return
+        t = np.linspace(0, 1, 500)
+        self._angle_b = 1. / (2. * np.trapz(
+            np.exp(-self._angle_width * t**2), t))
+
+        # We neglect here the factor of 1/2pi, as without it:
+        # * The graphs on page 69 can be reproduced correctly
+        # * The distribution is normalized (sums to 1)
+        # Size 90 below *must* match the number returned from T-matrix
+        self._angle_vals = np.linspace(np.pi/2, np.pi, TMATRIX_ANGLES)
+        self._angle_weights = self._angle_b * np.exp(
+            -self._angle_width * np.cos(th)**2) * np.sin(th)
+
+        # Since the distribution and scattering calculations are symmetric, we
+        # just calculate the right half of the distribution and double the
+        # weights
+        self._angle_weights[1:] *= 2
+        print 'Weight sum: %f' % np.trapz(self._angle_vals, self._angle_weights)
+
+    angle_width = property(fget=get_angle_width, fset=set_angle_width)
+
 
     def __init__(self, wavelength, temperature, type='water', shape='sphere',
       diameters=None, ref_index=None):
@@ -325,6 +364,10 @@ class scatterer(object):
         '''
         self.wavelength = wavelength
         self.temperature = temperature
+
+        # Controls width of angular averaging function
+        self.angle_width = 0.
+
         self.type = type
         if ref_index is None:
             self.m = refractive_index(self.type, self.wavelength,
@@ -340,6 +383,18 @@ class scatterer(object):
         self.sigma_g = (np.pi / 4.0) * self.diameters ** 2
         self.model = 'None'
 
+    def integrate_scattering(self, param, dsd, d=None):
+        # Allows for passing custom array in for diameters, such as allowing
+        # correlation coefficient to use a double array of diameters
+        if d is None:
+            d = self.diameters
+
+        # Handle angle distribution for t-matrix, if used
+        if self.model == 'tmatrix' and self.angle_width > 0.:
+            raise NotImplementedError('Angle integration not yet implemented!')
+
+        return np.trapz(param * dsd, x=d, axis=0)
+
     def set_scattering_model(self, model):
         '''
         Actually performs the scattering calculation, using the scattering model
@@ -348,11 +403,11 @@ class scatterer(object):
         '''
         try:
             fmat, bmat, qsca = scatterer.type_map[model](self.m, self.diameters,
-                self.wavelength, shape=self.shape)
+                self.wavelength, self.shape, self.angle_width)
 
             self.model = model
-            self.S_frwd = fmat.reshape((2,2) + self.diameters.shape)
-            self.S_bkwd = bmat.reshape((2,2) + self.diameters.shape)
+            self.S_frwd = fmat.reshape(fmat.shape[:-1] + self.diameters.shape)
+            self.S_bkwd = bmat.reshape(bmat.shape[:-1] + self.diameters.shape)
 
             # Calculate extinction cross-section
             self.sigma_eh = 2 * self.wavelength * self.S_frwd[0,0].imag
@@ -381,16 +436,15 @@ class scatterer(object):
         'v' for vertical, or 'vh' or 'hv' for cross-polarization calculation.
         '''
         if polar == 'h':
-            return np.trapz(self.sigma_bh * dsd_weights, x=self.diameters,
-                axis=0)
+            sig = self.sigma_bh
         elif polar == 'v':
-            return np.trapz(self.sigma_bv * dsd_weights, x=self.diameters,
-                axis=0)
+            sig = self.sigma_bv
         elif polar in ('hv', 'vh'):
-            return np.trapz(self.sigma_bhv * dsd_weights, x=self.diameters,
-                axis=0)
+            sig = self.sigma_bhv
         else:
             raise ValueError('Invalid polarization specified: %s' % polar)
+
+        return self.integrate_scattering(sig, dsd_weights)
 
     def get_reflectivity_factor(self, dsd_weights, polar='h'):
         '''
@@ -410,11 +464,10 @@ class scatterer(object):
         'v' for vertical.
         '''
         if polar == 'h':
-            return np.trapz(self.sigma_eh * dsd_weights, x=self.diameters,
-                axis=0)
+            sig = self.sigma_eh
         else:
-            return np.trapz(self.sigma_ev * dsd_weights, x=self.diameters,
-                axis=0)
+            sig = self.sigma_ev
+        return self.integrate_scattering(sig, dsd_weights)
 
     def get_propagation_wavenumber(self, dsd_weights, polar='h'):
         '''
@@ -428,11 +481,10 @@ class scatterer(object):
         # attenuation, are two parts of the effective wavenumber, which is
         # used for the propagation of the electric field (amplitude)
         if polar == 'h':
-            return self.wavelength * np.trapz(
-                self.S_frwd[0,0].real * dsd_weights, x=self.diameters, axis=0)
+            Sf = self.S_frwd[0,0].real
         else:
-            return self.wavelength * np.trapz(
-                self.S_frwd[1,1].real * dsd_weights, x=self.diameters, axis=0)
+            Sf = self.S_frwd[1,1].real
+        return self.wavelength * self.integrate_scattering(Sf, dsd_weights)
 
     def get_backscatter_phase(self, dsd_weights, polar='h'):
         '''
@@ -443,16 +495,14 @@ class scatterer(object):
         calculation.
         '''
         if polar == 'h':
-            return np.angle(np.trapz(-self.S_bkwd[0,0] * dsd_weights,
-                x=self.diameters, axis=0))
+            Sb = -self.S_bkwd[0,0]
         elif polar == 'v':
-            return np.angle(np.trapz(self.S_bkwd[1,1] * dsd_weights,
-                x=self.diameters, axis=0))
+            Sb = self.S_bkwd[1,1]
         elif polar in ('hv', 'vh'):
-            return np.angle(np.trapz(-self.S_bkwd[0,1] * dsd_weights,
-                x=self.diameters, axis=0))
+            Sb = -self.S_bkwd[0,1]
         else:
             raise ValueError('Invalid polarization specified: %s' % polar)
+        return np.angle(self.integrate_scattering(Sb, dsd_weights))
 
     def get_copolar_cross_correlation(self, dsd_weights):
         '''
@@ -464,10 +514,10 @@ class scatterer(object):
         # which is necessary to get accurate integration (giving a high of
         # 1.000000 instead of 1.000[NOISE].
         d_double = self.diameters.astype(np.float64)
-        HH = np.trapz(np.abs(self.S_bkwd[0,0])**2 * dsd_weights,
-            x=d_double, axis=0)
-        VV = np.trapz(np.abs(self.S_bkwd[1,1])**2 * dsd_weights,
-            x=d_double, axis=0)
-        HV = np.trapz(self.S_bkwd[0,0] * self.S_bkwd[1,1].conj() * dsd_weights,
-            x=d_double, axis=0)
-        return np.abs(HV)/np.sqrt(HH * VV)
+        HH = self.integrate_scattering(np.abs(self.S_bkwd[0,0])**2, dsd_weights,
+            d_double)
+        VV = self.integrate_scattering(np.abs(self.S_bkwd[1,1])**2, dsd_weights,
+            d_double)
+        HV = self.integrate_scattering(
+            self.S_bkwd[0,0] * self.S_bkwd[1,1].conj(), dsd_weights, d_double)
+        return np.abs(HV) / np.sqrt(HH * VV)
