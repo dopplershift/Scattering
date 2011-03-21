@@ -320,14 +320,16 @@ class scatterer(object):
         # * The distribution is normalized (sums to 1)
         # Size 90 below *must* match the number returned from T-matrix
         self._angle_vals = np.linspace(np.pi/2, np.pi, TMATRIX_ANGLES)
-        self._angle_weights = self._angle_b * np.exp(
-            -self._angle_width * np.cos(th)**2) * np.sin(th)
+        self._angle_weights = self._angle_b * (np.exp(
+            -self._angle_width * np.cos(self._angle_vals)**2)
+            * np.sin(self._angle_vals))
 
         # Since the distribution and scattering calculations are symmetric, we
         # just calculate the right half of the distribution and double the
         # weights
         self._angle_weights[1:] *= 2
-        print 'Weight sum: %f' % np.trapz(self._angle_vals, self._angle_weights)
+        norm_factor = np.trapz(self._angle_weights, self._angle_vals)
+        self._angle_weights /= norm_factor
 
     angle_width = property(fget=get_angle_width, fset=set_angle_width)
 
@@ -391,7 +393,10 @@ class scatterer(object):
 
         # Handle angle distribution for t-matrix, if used
         if self.model == 'tmatrix' and self.angle_width > 0.:
-            raise NotImplementedError('Angle integration not yet implemented!')
+            dims = len(param.shape)
+            newshape = (1,) * (dims - 1)
+            weights = self._angle_weights.reshape(-1, *newshape)
+            param = np.trapz(param * weights, x=self._angle_vals, axis=0)
 
         return np.trapz(param * dsd, x=d, axis=0)
 
