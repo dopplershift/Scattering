@@ -491,23 +491,14 @@ class scatterer(object):
             Sf = self.S_frwd[1,1].real
         return self.wavelength * self.integrate_scattering(Sf, dsd_weights)
 
-    def get_backscatter_phase(self, dsd_weights, polar='h'):
+    def get_backscatter_differential_phase(self, dsd_weights):
         '''
-        Calculates the backscatter phase shift, in radians, given the
-        drop size distribution, which should be in units of # m^-4. Polar is
-        used to specifiy the polarization assumed, which can be 'h' for
-        horizontal,'v' for vertical, or 'vh' or 'hv' for cross-polarization
-        calculation.
+        Calculates the backscatter differntial phase shift, in radians, given
+        the drop size distribution, which should be in units of # m^-4.
         '''
-        if polar == 'h':
-            Sb = -self.S_bkwd[0,0]
-        elif polar == 'v':
-            Sb = self.S_bkwd[1,1]
-        elif polar in ('hv', 'vh'):
-            Sb = -self.S_bkwd[0,1]
-        else:
-            raise ValueError('Invalid polarization specified: %s' % polar)
-        return np.angle(self.integrate_scattering(Sb, dsd_weights))
+        HV = self.integrate_scattering(
+            self.S_bkwd[0,0].conj() * self.S_bkwd[1,1], dsd_weights)
+        return np.angle(HV)
 
     def get_copolar_cross_correlation(self, dsd_weights):
         '''
