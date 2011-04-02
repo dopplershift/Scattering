@@ -281,8 +281,6 @@ def tmatrix(m, d, lam, shape, ang_width):
         sigma_g = (np.pi / 4.0) * ds ** 2
         qsca[i] = qs * (lam ** 2 / (2 * np.pi)) / sigma_g
 
-        # The returned arrays have values for a variety of canting angles.
-        # We just use the values for 0 canting angle.
         S_frwd[...,i] = fmat[...]
         S_bkwd[...,i] = bmat[...]
 
@@ -385,24 +383,27 @@ class scatterer(object):
         self.sigma_g = (np.pi / 4.0) * self.diameters ** 2
         self.model = 'None'
 
+    def reduce_angle(self, param):
+        # Handle angle distribution for t-matrix, if used
+        if self.model == 'tmatrix' and self.angle_width > 0.:
+            dims = len(param.shape)
+            newshape = (1,) * (dims - 1)
+            weights = self._angle_weights.reshape(-1, *newshape)
+            return np.trapz(param * weights, x=self._angle_vals, axis=0)
+        else:
+            return param
+
     def integrate_scattering(self, param, dsd, d=None):
         # Allows for passing custom array in for diameters, such as allowing
         # correlation coefficient to use a double array of diameters
         if d is None:
             d = self.diameters
 
-        # Handle angle distribution for t-matrix, if used
-        if self.model == 'tmatrix' and self.angle_width > 0.:
-            dims = len(param.shape)
-            newshape = (1,) * (dims - 1)
-            weights = self._angle_weights.reshape(-1, *newshape)
-            param = np.trapz(param * weights, x=self._angle_vals, axis=0)
-
-        return np.trapz(param * dsd, x=d, axis=0)
+        return np.trapz(self.reduce_angle(param) * dsd, x=d, axis=0)
 
     def set_scattering_model(self, model):
         '''
-        Actually performs the scattering calculation, using the scattering model
+        Actually performs the scattering calculation, ullsing the scattering model
         given by *model*, which is one of:
             ('tmatrix', 'mie', 'gans', 'rayleigh')
         '''
