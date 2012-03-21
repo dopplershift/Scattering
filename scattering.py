@@ -403,7 +403,7 @@ class scatterer(object):
 
     def set_scattering_model(self, model):
         '''
-        Actually performs the scattering calculation, ullsing the scattering model
+        Actually performs the scattering calculation, using the scattering model
         given by *model*, which is one of:
             ('tmatrix', 'mie', 'gans', 'rayleigh')
         '''
@@ -498,7 +498,7 @@ class scatterer(object):
         the drop size distribution, which should be in units of # m^-4.
         '''
         HV = self.integrate_scattering(
-            self.S_bkwd[0,0].conj() * self.S_bkwd[1,1], dsd_weights)
+            -self.S_bkwd[0,0].conj() * self.S_bkwd[1,1], dsd_weights)
         return np.angle(HV)
 
     def get_copolar_cross_correlation(self, dsd_weights):
