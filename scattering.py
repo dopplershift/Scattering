@@ -497,9 +497,11 @@ class scatterer(object):
         Calculates the backscatter differntial phase shift, in radians, given
         the drop size distribution, which should be in units of # m^-4.
         '''
+        # The negative sign on the [0,0] term and on the angle account
+        # for being in the FSA aligned system.
         HV = self.integrate_scattering(
             -self.S_bkwd[0,0].conj() * self.S_bkwd[1,1], dsd_weights)
-        return np.angle(HV)
+        return -np.angle(HV)
 
     def get_copolar_cross_correlation(self, dsd_weights):
         '''
