@@ -16,7 +16,8 @@ def plot_csecs(l, scatterers):
         plt.subplot(1,2,1)
         plot_csec(s, l, s.get_copolar_cross_correlation(mp), 'rho(1)')
         plt.subplot(1,2,2)
-        plot_csec(s, l, np.unwrap(s.get_backscatter_differential_phase(mp)), 'delta')
+        plot_csec(s, l, np.rad2deg(np.unwrap(
+            s.get_backscatter_differential_phase(mp))), 'delta')
 
 d = np.linspace(0.01, 2.0, 200).reshape(200, 1) * consts.centi
 l = np.linspace(0.01, 25.0, 100).reshape(1,100) / consts.kilo
