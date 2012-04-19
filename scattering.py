@@ -12,17 +12,38 @@ for water-ellipsoids, using an empirical fit of Brandes et al. (2002).
 '''
 import numpy as np
 import scipy.special as ss
-from scipy.constants import milli, centi
+from scipy.constants import milli, centi, giga, c, C2K
 import _tmatrix as _tmat
 
 __all__ = ['scatterer', 'tmatrix', 'mie', 'rayleigh', 'rayleigh_gans',
     'raindrop_axis_ratios', 'refractive_index', 'ice', 'water']
+
+def refractive_index_liebe(mat, lam, temp=20.0):
+    '''
+    Alternative refractive index computation. Results do not differ
+    significantly from Ray method for frequencies/temperatures of
+    interest in radar. This is only valid for water.
+
+    Comes from Liebe et al. 1991.
+    '''
+    f = c / (lam * giga)
+    th = 1 - 300. / C2K(temp)
+    eps0 = 77.66 - 103.3 * th
+    eps1 = 0.0671 * eps0
+    gamma1 = 20.20 + 146.4 * th + 316 * th * th
+    eps2 = 3.52 + 7.52 * th
+    gamma2 = 39.8 * gamma1
+    epsM = (eps0 - eps1) / (1 - 1.0j * (f / gamma1)) + (eps1 - eps2) / (
+            1 - 1.0j * (f / gamma2)) + eps2
+    return np.sqrt(epsM)
 
 def refractive_index(material, wavelength, temp=20.0):
     '''
     Calculates the complex refractive index using an expand Debye formula.
     The argument to the function gives another function which will return the
     necessary constants.  Temperature is in Celsius, Wavelength in m.
+
+    Formula comes from Ray (1972).
     '''
     (eps_s, eps_inf, alpha, lam_s, sigma) = _material_dict[material](temp)
     wavelength /= centi
