@@ -18,6 +18,34 @@ import _tmatrix as _tmat
 __all__ = ['scatterer', 'tmatrix', 'mie', 'rayleigh', 'rayleigh_gans',
     'raindrop_axis_ratios', 'refractive_index', 'ice', 'water']
 
+# Optional support for Quantities unit handling
+try:
+    import quantities as pq
+    import functools
+    def handle_units(handler):
+        def dec(func):
+            return pq.quantizer(func, handler)
+        return dec
+    def rescale_units(*units):
+        def dec(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                for i,(arg,unit) in enumerate(zip(args, units)):
+                    if isinstance(arg, pq.Quantity):
+                        args[i] = arg.rescale(unit)
+                func(*args, **kwargs)
+            return wrapper
+        return dec
+except ImportError:
+    def handle_units(handler):
+        def dec(func):
+            return func
+        return dec
+    def rescale_units(*units):
+        def dec(func):
+            return func
+        return dec
+
 def refractive_index_liebe(mat, lam, temp=20.0):
     '''
     Alternative refractive index computation. Results do not differ
@@ -85,6 +113,7 @@ def ice(temp):
 # Used to lookup functions that specify parameters given the material
 _material_dict = dict(water=water, ice=ice)
 
+@rescale_units('meters')
 def raindrop_axis_ratios(d):
     '''
     Calculates the axis ratio for an oblate spheroid approximating a raindrop
@@ -124,11 +153,11 @@ def mie(m, d, lam, *args):
         xs.size
         xlist = xs
     except:
-        xlist = np.array(xs)
+        xlist = np.asanyarray(xs)
 
-    S_frwd = np.zeros((2, 2, d.size), dtype=np.complex64)
-    S_bkwd = np.zeros((2, 2, d.size), dtype=np.complex64)
-    qsca = np.zeros(xlist.size)
+    S_frwd = np.zeros_like(d, dtype=np.complex64).resize((2, 2, d.size))
+    S_bkwd = np.zeros_like(d, dtype=np.complex64).resize((2, 2, d.size))
+    qsca = np.zeros_like(xlist)
 ##    qext = np.zeros(xlist.size)
 ##    qabs = np.zeros(xlist.size)
     for i,x in enumerate(xlist.flat):
@@ -202,9 +231,9 @@ def _mie_abcd(m, x):
     return an, bn
 
 def rayleigh(m, d, lam, *args):
-    empty = np.zeros(d.shape, dtype=np.complex64)
     Kw = (m**2 - 1.0)/(m**2 + 2.0)
     S = Kw * np.pi**2 / (2 * lam**2) * d**3
+    empty = np.zeros_like(S, dtype=np.complex64)
     qsca = (32.0/3.0) * (np.abs(S)/d)**2
     qabs = 4.0 * Kw.imag * np.pi * d / lam
     qext = qsca + qabs
@@ -212,14 +241,14 @@ def rayleigh(m, d, lam, *args):
     # Hack here so that extinction cross section can be correctly retrieved from
     # the forward scattering matrix
     S_frwd = S.real + 1.0j * qext * np.pi * d**2 / (8.0 * lam)
-    fmat = np.array([[S_frwd, empty], [empty, S_frwd]])
-    bmat = np.array([[-S, empty], [empty, S]])
+    fmat = np.asanyarray([[S_frwd, empty], [empty, S_frwd]])
+    bmat = np.asanyarray([[-S, empty], [empty, S]])
     return fmat.squeeze(), bmat.squeeze(), qsca
 
 def rayleigh_gans(m, d, lam, shape, *args):
     # Get the lambda_z parameter that is a function of the shape of the drop
     if shape == 'sphere':
-        lz = 1./3. * np.ones(d.shape)
+        lz = 1./3. * np.ones_like(d)
     elif shape == 'oblate':
         rat = raindrop_axis_ratios(d)
         f2 = rat**-2 - 1
@@ -234,7 +263,7 @@ def rayleigh_gans(m, d, lam, shape, *args):
 
     # Calculate the constants outside of the matrix
     eps_r = m**2
-    empty = np.zeros(d.shape, dtype=np.complex64)
+    empty = np.zeros_like(d, dtype=np.complex64)
     l = (1 - lz) / 2.
     Sfact = np.pi**2 * d**3 * (eps_r - 1) / (6. * lam**2)
     polar_h = 1. / ((eps_r - 1) * l + 1)
@@ -251,20 +280,21 @@ def rayleigh_gans(m, d, lam, shape, *args):
     qext_v = qsca_v + qabs_v
 
     # Get the forward and backward scattering matrices
-    fmat = Sfact * np.array([[polar_h, empty],
-                            [empty, polar_v]], dtype=np.complex64)
+    fmat = Sfact * np.asanyarray([[polar_h, empty],
+                                  [empty, polar_v]], dtype=np.complex64)
 
     # Hack here so that extinction cross section can be correctly retrieved from
     # the forward scattering matrix
     fmat[0,0].imag = qext_h * np.pi * d**2 / (8.0 * lam)
     fmat[1,1].imag = qext_v * np.pi * d**2 / (8.0 * lam)
 
-    bmat = Sfact * np.array([[-polar_h, empty],
-                            [empty, polar_v]], dtype=np.complex64)
+    bmat = Sfact * np.asanyarray([[-polar_h, empty],
+                                  [empty, polar_v]], dtype=np.complex64)
 
     return fmat.squeeze(), bmat.squeeze(), qsca_h
 
 TMATRIX_ANGLES = 90
+@handle_units(lambda *a,**kw: a[2], a[2], 'dimensionless')
 def tmatrix(m, d, lam, shape, ang_width):
     equal_volume = 1.0
     d = np.atleast_1d(d)
@@ -379,7 +409,7 @@ class scatterer(object):
                 of 100 diameters linearly spaced between 0 and 0.01 meters.
 
             ref_index : Used to give an explicit assumed value for the
-                refractive index. If none is given, the coeficients of
+                refractive index. If none is given, the coefficients of
                 Ray (1972) are used to calculate the dielectric constant
                 of water or ice, given the *temperature*.
         '''
