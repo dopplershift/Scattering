@@ -100,6 +100,17 @@ try:
             pass
         return np.exp(val, *args, **kwargs)
 
+    def angle(val, deg=False):
+        try:
+            val = val.simplified
+            ret = np.angle(val, deg)
+            if deg:
+                return pq.Quantity(ret, units='degrees')
+            else:
+                return pq.Quantity(ret, units='radians')
+        except AttributeError:
+            return np.angle(val, deg)
+
     unit_dict = dict()
     unit_dict['density_water'] = pq.kilogram / pq.meter**3
     unit_dict['mp_N0'] = pq.meter**-4
@@ -118,6 +129,7 @@ except ImportError:
     force_units = check_units
 
     exp = np.exp
+    angle = np.angle
 
     def update_consts(local_dict):
         pass

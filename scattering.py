@@ -13,7 +13,7 @@ for water-ellipsoids, using an empirical fit of Brandes et al. (2002).
 import numpy as np
 import scipy.special as ss
 from scipy.constants import milli, centi, giga, c, C2K
-from .unit_helpers import check_units, force_units, quantitizer
+from .unit_helpers import check_units, force_units, quantitizer, angle
 import _tmatrix as _tmat
 
 __all__ = ['scatterer', 'tmatrix', 'mie', 'rayleigh', 'rayleigh_gans',
@@ -551,7 +551,7 @@ class scatterer(object):
         # for being in the FSA aligned system.
         HV = self.integrate_scattering(
             -self.S_bkwd[0,0].conj() * self.S_bkwd[1,1], dsd_weights)
-        return -np.angle(HV)
+        return -angle(HV)
 
     def get_copolar_cross_correlation(self, dsd_weights):
         '''
