@@ -52,6 +52,8 @@ try:
     # Make a decorator to force the proper units if we're given a
     # quantity
     def force_units(return_units, **units):
+        if return_units is None:
+            return_units = 'dimensionless'
         def decorator(func):
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
