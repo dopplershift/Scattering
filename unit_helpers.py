@@ -126,6 +126,11 @@ except ImportError:
             return func
         return dec
 
+    def quantitizer(handler):
+        def dec(func):
+            return func
+        return dec
+
     force_units = check_units
 
     exp = np.exp
