@@ -17,7 +17,8 @@ from .unit_helpers import check_units, force_units, quantitizer, angle
 import _tmatrix as _tmat
 
 __all__ = ['scatterer', 'tmatrix', 'mie', 'rayleigh', 'rayleigh_gans',
-    'raindrop_axis_ratios', 'refractive_index', 'ice', 'water']
+    'brandes_axis_ratios', 'pruppacher_axis_ratios', 'refractive_index',
+    'ice', 'water']
 
 @force_units('dimensionless', lam='meters')
 def refractive_index_liebe(mat, lam, temp=20.0):
@@ -89,7 +90,7 @@ def ice(temp):
 _material_dict = dict(water=water, ice=ice)
 
 @force_units('dimensionless', d='meters')
-def raindrop_axis_ratios(d):
+def brandes_axis_ratios(d):
     '''
     Calculates the axis ratio for an oblate spheroid approximating a raindrop
     given the (equi-volume) diameter of a spherical drop.  Diameter is in m.
@@ -103,7 +104,20 @@ def raindrop_axis_ratios(d):
     '''
     d = d / milli
     ab = 0.9951 + d * (0.0251 + d * (-0.03644 + d * (0.005303 - 0.0002492 * d)))
-    ab[d>8] = ab[d<=8].min()
+    return ab
+
+@force_units('dimensionless', d='meters')
+def pruppacher_axis_ratios(d):
+    '''
+    Calculates teh axis ratio for an oblate spheroid approximating a raindrop
+    given the (equi-volume) diameter of a spherical drop. Diameter is in m.
+    This method is based on the empirical fit by Pruppacher and Beard (1970)
+    in QJRMS.
+    '''
+    d = d / milli
+    ab = 1.03 - 0.062 * d
+    ab[d < 0.5] = 0.999999 # 1.0 yields division by 0 problems
+    ab[ab < 0.5] = 0.5
     return ab
 
 @quantitizer(lambda m,d,lam, *a: (lam, lam, 'dimensionless'))
@@ -230,12 +244,12 @@ def rayleigh(m, d, lam, *args):
     #bmat = np.asanyarray([[-S, empty], [empty, S]])
     return fmat.squeeze(), bmat.squeeze(), qsca
 
-def rayleigh_gans(m, d, lam, shape, *args):
+def rayleigh_gans(m, d, lam, shape, axis_ratio_func, *args):
     # Get the lambda_z parameter that is a function of the shape of the drop
     if shape == 'sphere':
         lz = 1./3. * np.ones(d.shape, dtype=d.dtype)
     elif shape == 'oblate':
-        rat = raindrop_axis_ratios(d)
+        rat = axis_ratio_func(d)
         f2 = rat**-2 - 1
         f = np.sqrt(f2)
         lz = ((1 + f2) / f2) * (1 - (1. / f) * np.arctan(f))
@@ -294,7 +308,7 @@ def rayleigh_gans(m, d, lam, shape, *args):
 
 TMATRIX_ANGLES = 90
 @force_units(('m', 'm', 'dimensionless'), d='m', lam='m')
-def tmatrix(m, d, lam, shape, ang_width):
+def tmatrix(m, d, lam, shape, axis_ratio_func, ang_width):
     equal_volume = 1.0
     d = np.atleast_1d(d)
 
@@ -305,7 +319,7 @@ def tmatrix(m, d, lam, shape, ang_width):
         eccen.fill(1.00000001) # According to Mischenko, using 1.0 can overflow
     elif shape == 'oblate':
         shp_code = -1
-        eccen = 1. / raindrop_axis_ratios(d)
+        eccen = 1. / axis_ratio_func(d)
     elif shape == 'prolate':
         raise NotImplementedError
         shp_code = -1
@@ -383,7 +397,7 @@ class scatterer(object):
 
 
     def __init__(self, wavelength, temperature, type='water', shape='sphere',
-      diameters=None, ref_index=None):
+      diameters=None, ref_index=None, axis_ratio_func=brandes_axis_ratios):
         '''
         Construct a scatterer for *wavelength* and *temperature*.
 
@@ -411,6 +425,9 @@ class scatterer(object):
                 refractive index. If none is given, the coefficients of
                 Ray (1972) are used to calculate the dielectric constant
                 of water or ice, given the *temperature*.
+
+            axis_ratio_func : Used to calculate particle axis ratios as a
+                function of diameter, which is taken in meters.
         '''
         self.wavelength = wavelength
         self.temperature = temperature
@@ -432,6 +449,7 @@ class scatterer(object):
         self.x = np.pi * self.diameters / self.wavelength
         self.sigma_g = (np.pi / 4.0) * self.diameters ** 2
         self.model = 'None'
+        self.axis_ratio_func = axis_ratio_func
 
     def reduce_angle(self, param):
         # Handle angle distribution for t-matrix, if used
@@ -459,7 +477,8 @@ class scatterer(object):
         '''
         try:
             fmat, bmat, qsca = scatterer.type_map[model](self.m, self.diameters,
-                self.wavelength, self.shape, self.angle_width)
+                self.wavelength, self.shape, self.axis_ratio_func,
+                self.angle_width)
 
             self.model = model
             self.S_frwd = fmat.reshape(fmat.shape[:-1] + self.diameters.shape)
